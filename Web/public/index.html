@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+    <title>Room Condition</title>
+</head>
+
+<body class="bg-light d-flex flex-row p-4" style="background-image:url(/public/img/kitchen.jpg);background-size: cover">
+    <!-- Left navbar -->
+    <div class="container h-100 p-4 bg-light mr-4 w-25 rounded-lg">
+
+        <ul class="list-group">
+            <a class="list-group-item list-group-item-action active" href="/">Sensors Reading</a>
+            <a class="list-group-item list-group-item-action" href="/home_automation">Remote Relay</a>
+        </ul>
+
+    </div>
+
+    <!-- Content -->
+    <div class="container bg-white h-100 p-5 rounded-lg">
+
+        <div class="jumbotron"
+            style="background-image: url('/public/img/kitchen.jpg'); background-size: cover; background-position-y: 50%">
+            <div class="container">
+                <h1 class="display-4 text-light">Sensors Reading</h1>
+            </div>
+        </div>
+
+        <h1 class="display-4">Room Condition</h1>
+        <hr>
+        <div class="form-row">
+            <!-- Temperature -->
+            <div class="form-group col-6">
+                <label>Temperature</label>
+                <input type="text" class="form-control" id="temp-input" aria-describedby="temp-input"
+                    placeholder="Temperature" readonly>
+            </div>
+
+            <!-- Dew Point -->
+            <div class="form-group col-6">
+                <label>Dew Point</label>
+                <input type="text" class="form-control" id="dew-input" aria-describedby="dew-input"
+                    placeholder="Dew Point" readonly>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <!-- Humidity -->
+            <div class="form-group col-6">
+                <label>Humidity</label>
+                <input type="text" class="form-control" id="humidity-input" aria-describedby="humidity-input"
+                    placeholder="Humidity" readonly>
+            </div>
+
+            <!-- Absolute Humidity -->
+            <div class="form-group col-6">
+                <label>Absolute Humidity</label>
+                <input type="text" class="form-control" id="abs-humidity-input" aria-describedby="abs-humidity-input"
+                    placeholder="Absolute Humidity" readonly>
+            </div>
+        </div>
+
+        <h1 class="display-4">Hazardous Gas</h1>
+        <hr>
+
+        <div class="form-row">
+            <!-- Smoke alert -->
+            <div class="form-group col-3">
+                <label>Smoke Status</label>
+                <input type="text" class="form-control" id="smoke-input" aria-describedby="smoke-input"
+                    placeholder="Smoke (No Smoke / Alert)" readonly>
+            </div>
+
+            <!-- LPG -->
+            <div class="form-group col-3">
+                <label>LPG</label>
+                <input type="text" class="form-control" id="lpg-input" aria-describedby="lpg-input"
+                    placeholder="LPG" readonly>
+            </div>
+
+            <!-- Methane -->
+            <div class="form-group col-3">
+                <label>Methane</label>
+                <input type="text" class="form-control" id="methane-input" aria-describedby="methane-input"
+                    placeholder="Methane" readonly>
+            </div>
+
+            <!-- Hydrogen -->
+            <div class="form-group col-3">
+                <label>Hydrogen</label>
+                <input type="text" class="form-control" id="hydrogen-input" aria-describedby="hydrogen-input"
+                    placeholder="Hydrogen" readonly>
+            </div>
+        </div>
+
+
+    </div>
+</body>
+<script src="/public/get_sensors.js"></script>
+
+</html>
