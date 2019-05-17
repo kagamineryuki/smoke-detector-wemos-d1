@@ -14,7 +14,7 @@ npm install
 ```
 node app.js
 ```
-3. Now you can access it on your_ip_here:5000
+3. Now you can access it on ```your_ip_here:5000```
 
 ### Arduino IDE
 1. First install the text editor that are compatible with PlatformIO plugins one of which is Atom IDE
