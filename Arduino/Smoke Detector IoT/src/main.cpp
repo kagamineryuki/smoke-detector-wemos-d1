@@ -5,7 +5,6 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <TroykaMQ.h>
-#include <ArduinoOTA.h>
 
 // PIN DEFINITIONS
 const int GPIO2 = 16;//Relay 1
