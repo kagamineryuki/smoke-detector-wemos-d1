@@ -7,12 +7,12 @@
 #include <TroykaMQ.h>
 
 // PIN DEFINITIONS
-const int GPIO2 = 16;//Relay 1
-const int GPIO3 = 5; //Relay 2
 const int GPIO4 = 4; //DHT11 Temp & Humidity
+const int GPIO3 = 5; //Green LED
+const int GPIO2 = 16;//Red LED
 
 //wifi credential
-const char* ssid = "Kaze's Hotspot";
+const char* ssid = "HN-03";
 const char* password = "5D3v1#vW";
 const char* fingerprint = "39:DF:B6:55:54:1D:A4:53:12:70:65:DC:43:11:53:DA:3B:A3:6E:A8";
 
@@ -37,9 +37,7 @@ boolean LED = true;
 // ArduinoJSON
 StaticJsonDocument<200> jsonBuffer;
 const size_t capacity = JSON_OBJECT_SIZE(1) + 200;
-DynamicJsonDocument jsonRelay(capacity);
-DynamicJsonDocument jsonDHT(capacity);
-DynamicJsonDocument jsonMQ2(capacity);
+DynamicJsonDocument jsonSensors(capacity);
 
 //first init
 WiFiClientSecure espClient;
@@ -49,19 +47,14 @@ MQ2 mq2(A0);
 
 // Functions definition
 void callback(char* topic, byte* payload, unsigned int length);
-void Check_all_relays();
-void Send_command_to_relays();
-void Get_dht11_val();
-void Get_mq2_val();
+void Get_sensors_val();
 
 void setup() {
-// Change pinMode for relays
+// initialize LEDs pin
   pinMode(GPIO2, OUTPUT);
   pinMode(GPIO3, OUTPUT);
 
-// reset relay to all off
-  digitalWrite(GPIO2, LOW);
-  digitalWrite(GPIO3, LOW);
+  digitalWrite(GPIO2, HIGH);
 
 // initialize dht library
   dht.setup(GPIO4, DHTesp::DHT11);
@@ -102,49 +95,32 @@ void loop() {
     if (client.connect("Wemos D1 Trial", mqttUser, mqttPassword)){ //trying to connect
       Serial.println("Connected to MQTT Server");
       client.subscribe("wemos/cmd"); //subscribe to wemos/cmd
+        digitalWrite(GPIO3, HIGH); // GREEN LED ON
+        digitalWrite(GPIO2, LOW); // RED LED OFF
     } else {
       Serial.print("Can't connect to MQTT Server : ");
+      digitalWrite(GPIO3, LOW); // GREEN LED OFF
+      digitalWrite(GPIO2, HIGH); // RED LED ON
       Serial.println(client.state()); //print the fault code
       delay(200); //wait 200ms
     }
   }
 
-// Send status of all relay every 1 second
-  if(millisNow > lastSendMsg + 1000){
-    String relays_status = "";
-
-    // check all relays
-    Check_all_relays();
-
-    // make json string
-    serializeJson(jsonRelay, relays_status);
-
-    // publish it to wemos/status
-    client.publish("wemos/status", (char*)relays_status.c_str());
-    relays_status = "";
-
-    lastSendMsg = millisNow;
-  }
-
 // Send temperature and humidity
   if(millisNow > lastSendTH + 2000){
-    String dht11_string = "";
-    String mq2_string = "";
+    String input_string = "";
+    // String mq2_string = "";
 
 
-    // make json for temp and humidity
-    Get_dht11_val();
-    serializeJson(jsonDHT, dht11_string);
-    Get_mq2_val();
-    serializeJson(jsonMQ2, mq2_string);
+    // make json for sensors
+    Get_sensors_val();
+    serializeJson(jsonSensors, input_string);
 
     // publish it to wemos/sensors
-    client.publish("wemos/sensors_dht", (char*)dht11_string.c_str());
-    client.publish("wemos/sensors_mq2", (char*)mq2_string.c_str());
+    client.publish("wemos/sensors", (char*)input_string.c_str());
 
     // clear out the temporary variable for the next reading
-    dht11_string = "";
-    mq2_string = "";
+    input_string = "";
 
     lastSendTH = millisNow;
   }
@@ -174,69 +150,17 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.println("Parse failed");
   }
 
-  Send_command_to_relays();
-
   message = "";
 }
 
-// Check all relays status
-void Check_all_relays(){
-   // Check relay no.1 @ D2
-  switch (digitalRead(GPIO2)){
-    case 1:
-      jsonRelay["relay_1_status"] = false;
-      break;
-    case 0:
-      jsonRelay["relay_1_status"] = true;
-      break;
-  }
-
-  // Check relay no.2 @ D3
- switch (digitalRead(GPIO3)){
-   case 1:
-     jsonRelay["relay_2_status"] = false;
-     break;
-   case 0:
-     jsonRelay["relay_2_status"] = true;
-     break;
- }
-
-}
-
-// do the commands from wemos/cmd
-void Send_command_to_relays(){
-  // Relay 1
-  if (jsonBuffer["relay_1"]){
-    digitalWrite(GPIO2, LOW);
-  } else {
-    digitalWrite(GPIO2, HIGH);
-  }
-
-  // Relay 2
-  if (jsonBuffer["relay_2"]){
-    digitalWrite(GPIO3, LOW);
-  } else {
-    digitalWrite(GPIO3, HIGH);
-  }
-
-}
-
 // get values from sensors and add them to array
-void Get_dht11_val(){
+void Get_sensors_val(){
   float temperature = dht.getTemperature();
-  float humidity = dht.getHumidity();
 
 // DHT11
-  jsonDHT["temperature"] = temperature;
-  jsonDHT["humidity"] = humidity;
-  jsonDHT["abs_humidity"] = dht.computeAbsoluteHumidity(temperature, humidity, false);
-  jsonDHT["dew_point"] = dht.computeDewPoint(temperature, humidity, false);
-}
-
-void Get_mq2_val(){
-  // MQ2
-  jsonMQ2["smoke"] = mq2.readSmoke();
-  jsonMQ2["lpg"] = mq2.readLPG();
-  jsonMQ2["methane"] = mq2.readMethane();
-  jsonMQ2["hydrogen"] = mq2.readHydrogen();
+  jsonSensors["temperature"] = temperature;
+  jsonSensors["smoke"] = mq2.readSmoke();
+  // jsonDHT["humidity"] = humidity;
+  // jsonDHT["abs_humidity"] = dht.computeAbsoluteHumidity(temperature, humidity, false);
+  // jsonDHT["dew_point"] = dht.computeDewPoint(temperature, humidity, false);
 }

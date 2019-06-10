@@ -1,0 +1,6 @@
+{
+    "terminal.integrated.env.linux": {
+        "PATH": "/home/kaze/.platformio/penv/bin:/home/kaze/.platformio/penv:/home/kaze/.rbenv/shims:/home/kaze/.rbenv/bin:/usr/share/Modules/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/home/kaze/bin:/var/lib/snapd/snap/bin",
+        "PLATFORMIO_CALLER": "vscode"
+    }
+}
