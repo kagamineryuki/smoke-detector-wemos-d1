@@ -32,7 +32,6 @@ const char* mqttPassword = "1sZHdnmhMuRc";
 long millisNow = 0;
 long lastSendMsg = 0;
 long lastSendTH = 0;
-boolean LED = true;
 
 // ArduinoJSON
 StaticJsonDocument<200> jsonBuffer;
@@ -92,12 +91,14 @@ void loop() {
   //Connect to the mqtt server
   while (!client.connected()){ //loop until connected to server !
     Serial.println("Connecting to MQTT Server...");
+    
     if (client.connect("Wemos D1 Trial", mqttUser, mqttPassword)){ //trying to connect
+
       Serial.println("Connected to MQTT Server");
-      client.subscribe("wemos/cmd"); //subscribe to wemos/cmd
-        digitalWrite(GPIO3, HIGH); // GREEN LED ON
-        digitalWrite(GPIO2, LOW); // RED LED OFF
+      digitalWrite(GPIO3, HIGH); // GREEN LED ON
+      digitalWrite(GPIO2, LOW); // RED LED OFF
     } else {
+
       Serial.print("Can't connect to MQTT Server : ");
       digitalWrite(GPIO3, LOW); // GREEN LED OFF
       digitalWrite(GPIO2, HIGH); // RED LED ON
@@ -109,8 +110,6 @@ void loop() {
 // Send temperature and humidity
   if(millisNow > lastSendTH + 2000){
     String input_string = "";
-    // String mq2_string = "";
-
 
     // make json for sensors
     Get_sensors_val();
