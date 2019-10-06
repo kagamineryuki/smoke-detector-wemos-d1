@@ -12,9 +12,9 @@ const int GPIO3 = 5; //Green LED
 const int GPIO2 = 16;//Red LED
 
 //wifi credential
-const char* ssid = "HN-03";
-const char* password = "5D3v1#vW";
-const char* fingerprint = "39:DF:B6:55:54:1D:A4:53:12:70:65:DC:43:11:53:DA:3B:A3:6E:A8";
+const char* ssid = "INSERT SSID HERE";
+const char* password = "WIFI PASSWORD HERE";
+const char* fingerprint = "INSERT SERVER FINGERPRINT HERE";
 
 // Personal MQTT
 // const char* mqttServer = "kazeserver.ddns.net";
@@ -25,8 +25,8 @@ const char* fingerprint = "39:DF:B6:55:54:1D:A4:53:12:70:65:DC:43:11:53:DA:3B:A3
 // CloudMQTT
 const char* mqttServer = "m24.cloudmqtt.com";
 const int mqttPort = 22376;
-const char* mqttUser = "ikfemazr";
-const char* mqttPassword = "1sZHdnmhMuRc";
+const char* mqttUser = "CLOUD MQTT USERNAME";
+const char* mqttPassword = "CLOUD MQTT PASSWORD";
 
 // variable
 long millisNow = 0;
