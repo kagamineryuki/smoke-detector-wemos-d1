@@ -16,12 +16,6 @@ const char* ssid = "INSERT SSID HERE";
 const char* password = "WIFI PASSWORD HERE";
 const char* fingerprint = "INSERT SERVER FINGERPRINT HERE";
 
-// Personal MQTT
-// const char* mqttServer = "kazeserver.ddns.net";
-// const int mqttPort = 1883;
-// const char* mqttUser = "kaze";
-// const char* mqttPassword = "5D3v1#vW";
-
 // CloudMQTT
 const char* mqttServer = "m24.cloudmqtt.com";
 const int mqttPort = 22376;
