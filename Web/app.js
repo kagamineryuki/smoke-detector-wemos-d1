@@ -4,6 +4,7 @@ var app = express();
 var server = require('http').createServer(app);
 var serveIndex = require('serve-index');
 var mqtt = require('mqtt');
+var chacha20 = require('chacha20');
 var io = require('socket.io').listen(server);
 // var mqtt_cli = mqtt.connect({
 //     host: '192.168.88.3',
@@ -21,6 +22,9 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
+var nonce = new Buffer(8);
+nonce = "00 11 22 33 44 55 66 77";
+console.log(nonce);
 
 connections = []; //save all socket connections to this array
 

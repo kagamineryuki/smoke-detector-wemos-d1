@@ -7,6 +7,7 @@
 #include <TroykaMQ.h>
 #include <ChaCha.h>
 #include <Cipher.h>
+#include <Base64.h>
 
 // PIN DEFINITIONS
 const int GPIO4 = 4;  //DHT11 Temp & Humidity
@@ -15,16 +16,17 @@ const int GPIO2 = 16; //Red LED
 const int GPIO5 = 14; // beeper
 
 //Cypher
-byte key[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+byte key[16] = "Hello, World!!!";
 size_t keySize = 16;
 uint8_t rounds = 20; //ChaCha20
 byte nonce[8] = {0,0,0,0,0,0,0,0};
 byte counter[8] = {0,1,2,3,4,5,6,7};
+int msg_length = 0;
 ChaCha chacha;
 
 //wifi credential
-const char* ssid = "HN-03";
-const char* password = "<Ir0Be><5D3v1#vW><A!v#N7@f4#L>";
+const char* ssid = "ArduinoUno";
+const char* password = "qwerty123";
 
 // CloudMQTT
 const char* mqttServer = "m24.cloudmqtt.com";
@@ -39,9 +41,11 @@ long lastSendTH = 0;
 
 // ArduinoJSON
 StaticJsonDocument<200> jsonBuffer;
-const size_t capacity = JSON_OBJECT_SIZE(1) + 200;
+const size_t capacity = JSON_OBJECT_SIZE(1) + 2048;
 DynamicJsonDocument jsonSensors(capacity);
 DynamicJsonDocument jsonStatus(capacity);
+DynamicJsonDocument jsonEncryptedSensors(capacity);
+DynamicJsonDocument jsonEncryptedStatus(capacity);
 
 //first init
 WiFiClient espClient;
@@ -53,11 +57,12 @@ MQ2 mq2(A0);
 void callback(char* topic, byte* payload, unsigned int length);
 void Get_sensors_val();
 void Generate_nonce(ChaCha *chacha);
-void Encrypt(ChaCha *chacha, String msg);
+void Encrypt(ChaCha *chacha, char *msg);
+void Decrypt(ChaCha *chacha, char *ciphertext);
 
 void setup() {
 // start the serial
-  Serial.begin(230400);
+  Serial.begin(115200);
 
 // initialize LEDs pin
   pinMode(GPIO2, OUTPUT);
@@ -125,27 +130,93 @@ void loop() {
   }
 
 // Send temperature and humidity
-  if(millisNow > lastSendTH + 2000){
-    String input_string = "";
-    String status_string = "";
+  if(millisNow > lastSendTH + 3000){
+    char input_string[1024];
+    char status_string[1024];
+    String encrypted_input_json = "";
+    String encrypted_status_json = "";
+    String encrypted_input_text = "";
+    String encrypted_status_text = "";
+    String buffer_nonce = "";
+
+    jsonSensors.clear();
+    jsonStatus.clear();
+    jsonEncryptedSensors.clear();
+    jsonEncryptedStatus.clear();
+    encrypted_status_json.clear();
+    encrypted_input_json.clear();
+    jsonBuffer.clear();
 
     // make json for sensors
     Get_sensors_val();
     serializeJson(jsonSensors, input_string);
     serializeJson(jsonStatus, status_string);
 
-    // encrypt
+    // encrypt sensor
     Generate_nonce(&chacha);
     Encrypt(&chacha, input_string);
+    
+    // nonce to hex nonce
+    for(int i = 0; i < 8 ; i++){
+      buffer_nonce += String(nonce[i], HEX);
+      buffer_nonce += ";";
+    }
+    
+    // encryp. to int
+    for(int i = 0; i < msg_length ; i++){
+      encrypted_input_text += String(input_string[i], HEX);
+      encrypted_input_text += ";";
+    }
 
-    // publish it to wemos/sensors
-    client.publish("wemos/sensors", (char*)input_string.c_str());
-    client.publish("wemos/status", (char*)status_string.c_str());
-    // Serial.println(input_string);
-    // Serial.println(status_string);
+    // build JSON for sensors
+    jsonEncryptedSensors["nonce"] = buffer_nonce;
+    jsonEncryptedSensors["encrypted"] = encrypted_input_text;
+    serializeJson(jsonEncryptedSensors, encrypted_input_json);
+
+    //encrypt status
+    Generate_nonce(&chacha);
+    Encrypt(&chacha, status_string);
+    
+    // nonce to hex nonce
+    buffer_nonce = "";
+    for(int i = 0; i < 8 ; i++){
+      buffer_nonce += String(nonce[i], HEX);
+      buffer_nonce += ";";
+    }
+
+    // encryp. to int
+    for(int i = 0; i < msg_length ; i++){
+      encrypted_status_text += String(status_string[i], HEX);
+      encrypted_status_text += ";";
+    }
+    
+    // build JSON for status
+    jsonEncryptedStatus["nonce"] = buffer_nonce;
+    jsonEncryptedStatus["encrypted"] = encrypted_status_text;
+    serializeJson(jsonEncryptedStatus, encrypted_status_json);
+
+    // publish it to wemos/
+    if(client.publish("wemos/sensors", (char *)encrypted_input_json.c_str())){
+      Serial.println("wemos/sensors | published");
+      Serial.println("wemos/sensors | " + encrypted_input_json);
+    } else {
+      Serial.println("wemos/sensors | failed");
+      Serial.println("wemos/sensors | " + encrypted_input_json);
+    }
+
+    if(client.publish("wemos/status", (char *)encrypted_status_json.c_str())){
+      Serial.println("wemos/status | published");
+      Serial.println("wemos/status | " + encrypted_status_json);
+    } else {
+      Serial.println("wemos/sensors | failed");
+      Serial.println("wemos/status | " + encrypted_status_json);
+    }
 
     // clear out the temporary variable for the next reading
-    input_string = "";
+    input_string[0] = '\0';
+    status_string[0] = '\0';
+
+    Serial.println();
 
     lastSendTH = millisNow;
   }
@@ -155,33 +226,33 @@ void loop() {
 
 // callback function from receive message action
 void callback(char* topic, byte* payload, unsigned int length) {
-//   String message = "";
+  String message = "";
 
-// // DEBUGGING =======================================
-//   Serial.print("Message arrived in topic: ");
-//   Serial.println(topic);
-// // =================================================
+// DEBUGGING =======================================
+  Serial.print("Message arrived in topic: ");
+  Serial.println(topic);
+// =================================================
 
-//   Serial.print("Message:");
-//   for (int i = 0; i < length; i++) {
-//     message = message+(char)payload[i];
-//   }
+  Serial.print("Message:");
+  for (int i = 0; i < length; i++) {
+    message = message+(char)payload[i];
+  }
 
-//   Serial.println(message);
+  Serial.println(message);
 
-//   DeserializationError json_recv = deserializeJson(jsonBuffer,message);
+  DeserializationError json_recv = deserializeJson(jsonBuffer,message);
 
-//   if (json_recv){
-//     Serial.println("Parse failed");
-//   } else {
-//     if (jsonBuffer["beeper"]){
-//       digitalWrite(GPIO5, HIGH);
-//     } else {
-//       digitalWrite(GPIO5, LOW);
-//     }
-//   }
+  if (json_recv){
+    Serial.println("Parse failed");
+  } else {
+    if (jsonBuffer["beeper"]){
+      digitalWrite(GPIO5, HIGH);
+    } else {
+      digitalWrite(GPIO5, LOW);
+    }
+  }
 
-//   message = "";
+  message = "";
 }
 
 // get values from sensors and add them to array
@@ -230,23 +301,71 @@ void Generate_nonce(ChaCha *chacha){
   Serial.println("");
 
   chacha->clear();
+}
+
+void Encrypt(ChaCha *chacha, char *msg){
+  msg_length = strlen(msg);
+  byte buffer[msg_length];
+  byte plaintext[msg_length];
+  
   chacha->setNumRounds(rounds);
   chacha->setKey(key, keySize);
   chacha->setIV(nonce, chacha->ivSize());
   chacha->setCounter(counter, 8);
-}
 
-void Encrypt(ChaCha *chacha, String msg){
-  byte buffer[300];
-  byte plaintext[300];
-
-  for (size_t i = 0; i < msg.length(); i++) {
-      int len = msg.length() - i;
-      plaintext[i] = byte(msg.charAt(i));
-      chacha->encrypt(buffer , plaintext , len);
-      Serial.print(buffer[i], HEX);
-      Serial.print(",");
+  Serial.println();
+  for (int i = 0 ; i < msg_length ; i++){
+      plaintext[i] = msg[i];
   }
 
+   for (int i = 0 ; i < msg_length ; i += msg_length) {
+      int len = msg_length - i;
+      if (len > msg_length)
+          len = msg_length;
+      chacha->encrypt(buffer + i, plaintext + i, msg_length);
+   }
+
+  for (int i = 0 ; i < msg_length ; i++){
+      msg[i] = buffer[i];
+  }
+
+  Serial.println("CIPHERTEXT : ");
+
+  for (int i = 0 ; i < msg_length ; i++){
+    Serial.print(buffer[i], HEX);
+    Serial.print(", ");
+  }
+
+  Serial.println();
+
+}
+
+void Decrypt(ChaCha *chacha, char *ciphertext){
+  byte buffer[msg_length];
+  byte plaintext[msg_length];
+  String plain;
+
+  chacha->setNumRounds(rounds);
+  chacha->setKey(key, keySize);
+  chacha->setIV(nonce, chacha->ivSize());
+  chacha->setCounter(counter, 8);
+
+  for(int i = 0 ; i < msg_length ; i++){
+    plaintext[i] = ciphertext[i];
+  }
+
+  for (int i = 0 ; i < msg_length ; i += msg_length) {
+      int len = msg_length - i;
+      if (len > msg_length)
+          len = msg_length;
+      chacha->decrypt(buffer + i, plaintext + i, msg_length);
+   }
+
+  Serial.println("DECRYPTED : ");
+  for(int i = 0 ; i < msg_length ; i++){
+    ciphertext[i] = char(buffer[i]);
+    Serial.print(char(buffer[i]));
+  }
+  
   Serial.println();
 }
