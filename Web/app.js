@@ -14,7 +14,7 @@ var io = require('socket.io').listen(server);
 var mqtt_cli = mqtt.connect('mqtts://m24.cloudmqtt.com',{
     port: '22376',
     username: 'ikfemazr',
-    password: '1sZHdnmhMuRc'
+    password: 'bQklMK_j41al'
 });
 
 var bodyParser = require('body-parser');
@@ -40,8 +40,8 @@ function socket_connect() {
             console.log('%s device(s) disconnected', connections.length);
         });
 
-        socket.on('wemos/cmd', function(data){
-            mqtt_cli.publish('wemos/cmd', data.toString());
+        socket.on('command', function(data){
+            mqtt_cli.publish('wemos/command', data.toString());
         });
     });
 }
@@ -58,20 +58,20 @@ function mqtt_connect() {
             }
         });
 
-        // subscribe to wemos/sensors_dht
-        mqtt_cli.subscribe('wemos/sensors_dht', function (err) {
+        // subscribe to wemos/sensors
+        mqtt_cli.subscribe('wemos/sensors', function (err) {
             // check subscribed or not
             if (!err) {
-                console.log("Subscribed to wemos/sensors_dht");
+                console.log("Subscribed to wemos/sensors");
             }
         });
 
-        
-        // subscribe to wemos/sensors_mq2
-        mqtt_cli.subscribe('wemos/sensors_mq2', function (err) {
+
+        //subscribe to wemos/sensors_mq2
+        mqtt_cli.subscribe('wemos/command', function (err) {
             // check subscribed or not
             if (!err) {
-                console.log("Subscribed to wemos/sensors_mq2");
+                console.log("Subscribed to wemos/command");
             }
         });
     });
@@ -79,22 +79,21 @@ function mqtt_connect() {
 
 function mqtt_send(){
     mqtt_cli.on('message', function (topic, message) {
-        
+
+        if (topic === 'wemos/sensors'){
+            console.log(topic + ':' + message.toString());
+            io.emit('sensor', message.toString());
+        }
+
+    });
+
+    mqtt_cli.on('message', function (topic, message) {
+
         if (topic === 'wemos/status'){
             console.log(topic + ':' + message.toString());
             io.emit('status', message.toString());
         }
 
-        if (topic === 'wemos/sensors_dht'){
-            console.log(topic + ':' + message.toString());
-            io.emit('sensor_dht', message.toString());
-        }
-
-        if (topic === 'wemos/sensors_mq2'){
-            console.log(topic + ':' + message.toString());
-            io.emit('sensor_mq2', message.toString());
-        }
-        
     });
 }
 
@@ -107,12 +106,12 @@ app.get("/", function (req, res) {
     res.sendFile(__dirname + '/public/');
 });
 
-app.get("/home_automation", function (req, res) {
+app.get("/beeper_status", function (req, res) {
     res.sendFile(__dirname + '/public/home_automation.html');
 });
 
 // POST method
 app.post("/send-command", function (req, res) {
     var command = req.body.command;
-    mqtt_cli.publish('wemos/cmd', command);
+    mqtt_cli.publish('wemos/command', command);
 });
