@@ -4,14 +4,9 @@ var app = express();
 var server = require('http').createServer(app);
 var serveIndex = require('serve-index');
 var mqtt = require('mqtt');
-var chacha20 = require('chacha20');
+var chacha = require('chacha-js');
 var io = require('socket.io').listen(server);
-// var mqtt_cli = mqtt.connect({
-//     host: '192.168.88.3',
-//     port: '1883',
-//     username: 'kaze',
-//     password: '5D3v1#vW'
-// });
+
 var mqtt_cli = mqtt.connect('mqtts://m24.cloudmqtt.com',{
     port: '22376',
     username: 'ikfemazr',
@@ -22,9 +17,6 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
-var nonce = new Buffer(8);
-nonce = "00 11 22 33 44 55 66 77";
-console.log(nonce);
 
 connections = []; //save all socket connections to this array
 
@@ -44,8 +36,8 @@ function socket_connect() {
             console.log('%s device(s) disconnected', connections.length);
         });
 
-        socket.on('command', function(data){
-            mqtt_cli.publish('wemos/command', data.toString());
+        socket.on('repeat', function(data){
+            mqtt_cli.publish('wemos/repeat', JSON.stringify(json_processed));
         });
     });
 }
@@ -54,13 +46,6 @@ function mqtt_connect() {
     // mqtt connect
 
     mqtt_cli.on('connect', function () {
-        // subscribe to wemos/status
-        mqtt_cli.subscribe('wemos/status', function (err) {
-            // check subscribed or not
-            if (!err) {
-                console.log("Subscribed to wemos/status");
-            }
-        });
 
         // subscribe to wemos/sensors
         mqtt_cli.subscribe('wemos/sensors', function (err) {
@@ -70,14 +55,6 @@ function mqtt_connect() {
             }
         });
 
-
-        //subscribe to wemos/sensors_mq2
-        mqtt_cli.subscribe('wemos/command', function (err) {
-            // check subscribed or not
-            if (!err) {
-                console.log("Subscribed to wemos/command");
-            }
-        });
     });
 }
 
@@ -86,9 +63,19 @@ function mqtt_send(){
 
         if (topic === 'wemos/sensors'){
             console.log(topic + ':' + message.toString());
+            
+            json_received = JSON.parse(message.toString());
+            json_processed = {
+                "encrypted" : json_received.encrypted.toString().trim(0, json_received.encrypted.toString().length-1).split(";"),
+                "nonce" : json_received.nonce.toString().trim(0, json_received.nonce.toString().length-1).split(";"),
+                // "time" : json_received.time,
+                "counter" : json_received.counter.toString().trim(0, json_received.counter.toString().length-1).split(";"),
+                "length": json_received.length,
+            };
+
+            mqtt_cli.publish('wemos/repeat', JSON.stringify(json_processed));
             io.emit('sensor', message.toString());
         }
-
     });
 
     mqtt_cli.on('message', function (topic, message) {
