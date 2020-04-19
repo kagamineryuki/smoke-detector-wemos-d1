@@ -48,7 +48,7 @@ function mqtt_connect() {
     mqtt_cli.on('connect', function () {
 
         // subscribe to wemos/sensors
-        mqtt_cli.subscribe('wemos/sensors', function (err) {
+        mqtt_cli.subscribe('wemos/encrypt', function (err) {
             // check subscribed or not
             if (!err) {
                 console.log("Subscribed to wemos/sensors");
@@ -61,19 +61,20 @@ function mqtt_connect() {
 function mqtt_send(){
     mqtt_cli.on('message', function (topic, message) {
 
-        if (topic === 'wemos/sensors'){
+        if (topic === 'wemos/encrypt'){
             console.log(topic + ':' + message.toString());
             
             json_received = JSON.parse(message.toString());
             json_processed = {
-                "encrypted" : json_received.encrypted.toString().trim(0, json_received.encrypted.toString().length-1).split(";"),
-                "nonce" : json_received.nonce.toString().trim(0, json_received.nonce.toString().length-1).split(";"),
-                // "time" : json_received.time,
-                "counter" : json_received.counter.toString().trim(0, json_received.counter.toString().length-1).split(";"),
+                "encrypted" : json_received.encrypted.toString().split(";"),
+                "nonce" : json_received.nonce.toString().split(";"),
+                "time" : json_received.time,
+                "cycle" : json_received.cycle,
+                "counter" : json_received.counter.toString().split(";"),
                 "length": json_received.length,
             };
 
-            mqtt_cli.publish('wemos/repeat', JSON.stringify(json_processed));
+            mqtt_cli.publish('wemos/encrypt_decrypt', JSON.stringify(json_processed));
             io.emit('sensor', message.toString());
         }
     });

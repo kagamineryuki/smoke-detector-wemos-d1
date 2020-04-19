@@ -55,8 +55,8 @@ MQ2 mq2(A0);
 void callback(char* topic, byte* payload, unsigned int length);
 void Get_sensors_val();
 void Generate_nonce(ChaCha *chacha);
-void Encrypt(ChaCha *chacha, char *msg);
-void Decrypt(ChaCha *chacha, byte ciphertext[], int length, byte nonce[], byte counter[]);
+void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_stop, long& time_start, long& time_stop);
+void Decrypt(ChaCha *chacha, byte ciphertext[], byte plaintext,int length, byte nonce[], byte counter[], uint32_t& cycle_start, uint32_t& cycle_stop, long& time_start, long& time_stop);
 
 void setup() {
 // start the serial
@@ -112,7 +112,7 @@ void loop() {
 
     if (client.connect("client_1", mqttUser, mqttPassword)){ //trying to connect
 
-      client.subscribe("wemos/repeat");
+      client.subscribe("wemos/encrypt_decrypt");
 
       Serial.println("Connected to MQTT Server");
       digitalWrite(GPIO3, HIGH); // GREEN LED ON
@@ -134,6 +134,8 @@ void loop() {
     String encrypted_input_text = "";
     String buffer_nonce = "";
     String buffer_counter = "";
+    long time_start, time_stop;
+    uint32_t cycle_start, cycle_stop;
 
     jsonSensors.clear();
     jsonBuffer.clear();
@@ -146,26 +148,32 @@ void loop() {
 
     // encrypt sensor
     Generate_nonce(&chacha);
-    Encrypt(&chacha, input_string);
+    Encrypt(&chacha, input_string, cycle_start, cycle_stop, time_start, time_stop);
     
     // nonce to hex nonce
     for(int i = 0; i < 8 ; i++){
       buffer_nonce += String(nonce[i], HEX);
-      buffer_nonce += ";";
+      if(i < 7){
+        buffer_nonce += ";";
+      }
     }
     buffer_nonce.toUpperCase();
     
     // encryp. to int
     for(int i = 0; i < msg_length ; i++){
       encrypted_input_text += String(input_string[i], HEX);
-      encrypted_input_text += ";";
+      if(i < msg_length-1){
+        encrypted_input_text += ";";
+      }
     }
     encrypted_input_text.toUpperCase();
 
     // counter to byte
     for(int i = 0; i < 8 ; i++){
-      buffer_counter += String(counter[i], HEX);
-      buffer_counter += ";";
+      buffer_counter += String(counter[i], HEX); 
+      if(i < 7){
+        buffer_counter += ";";
+      }
     }
     buffer_counter.toUpperCase();
 
@@ -174,16 +182,12 @@ void loop() {
     jsonEncryptedSensors["encrypted"] = encrypted_input_text;
     jsonEncryptedSensors["length"] = msg_length;
     jsonEncryptedSensors["counter"] = buffer_counter;
+    jsonEncryptedSensors["time"] = time_stop - time_start;
+    jsonEncryptedSensors["cycle"] = cycle_stop - cycle_start;
     serializeJson(jsonEncryptedSensors, encrypted_input_json);
 
     // publish it to wemos/
-    if(client.publish("wemos/sensors", (char *)encrypted_input_json.c_str())){
-      Serial.println("wemos/sensors | published");
-      Serial.println("wemos/sensors | " + encrypted_input_json);
-    } else {
-      Serial.println("wemos/sensors | failed");
-      Serial.println("wemos/sensors | " + encrypted_input_json);
-    }
+    client.publish("wemos/encrypt", (char *)encrypted_input_json.c_str());
 
     // clear out the temporary variable for the next reading
     input_string[0] = '\0';
@@ -198,53 +202,58 @@ void loop() {
 
 // callback function from receive message action
 void callback(char* topic, byte* payload, unsigned int length) {
-  String message = "";
+  if(strcmp(topic, "wemos/encrypt_decrypt") == 0){
+    String message = "";
 
-// DEBUGGING =======================================
-  Serial.print("Message arrived in topic: ");
-  Serial.println(topic);
-// =================================================
+    // DEBUGGING =======================================
+      Serial.print("Message arrived in topic: ");
+      Serial.println(topic);
+    // =================================================
 
-  Serial.print("Message:");
-  for (int i = 0; i < length; i++) {
-    message = message+(char)payload[i];
+      Serial.print("Message:");
+      for (int i = 0; i < length; i++) {
+        message = message+(char)payload[i];
+      }
+
+      Serial.println(message);
+
+      DeserializationError json_recv = deserializeJson(jsonBuffer,message);
+      Serial.print(F("deserializeJson() failed: "));
+      Serial.println(json_recv.c_str());
+
+      if (json_recv){
+        Serial.println("Parse failed");
+      } else {
+        //decryption goes here    
+        byte nonce[8];
+        byte counter[8];
+        byte encrypted[200];
+        byte plaintext[200];
+        int length = jsonBuffer["length"];
+        long time_start, time_stop;
+        uint32_t cycle_start, cycle_stop;
+
+
+        // cipher message
+        for (int i = 0 ; i < msg_length ; i++){
+          unsigned long received_ciphertext = strtoul( jsonBuffer["encrypted"][i], nullptr, 16);
+          encrypted[i] = received_ciphertext & 0xFF;
+
+        }
+
+        // counter & nonce
+        for (int i = 0 ; i < 8 ; i++){
+          unsigned long received_counter = strtoul( jsonBuffer["counter"][i], nullptr, 16);
+          unsigned long received_nonce = strtoul( jsonBuffer["nonce"][i], nullptr, 16);
+          counter[i] = received_counter & 0xFF;
+          nonce[i] = received_nonce & 0xFF;
+        }
+
+        Decrypt(&chacha, encrypted, *plaintext, length, nonce, counter, cycle_start, cycle_stop, time_start, time_stop);
+      }
+
+      message = "";
   }
-
-  Serial.println(message);
-
-  DeserializationError json_recv = deserializeJson(jsonBuffer,message);
-  Serial.print(F("deserializeJson() failed: "));
-  Serial.println(json_recv.c_str());
-
-  if (json_recv){
-    Serial.println("Parse failed");
-  } else {
-    //decryption goes here    
-    byte nonce[8];
-    byte counter[8];
-    byte encrypted[200];
-    int length = jsonBuffer["length"];
-
-
-    // cipher message
-    for (int i = 0 ; i < msg_length ; i++){
-      unsigned long received_ciphertext = strtoul( jsonBuffer["encrypted"][i], nullptr, 16);
-      encrypted[i] = received_ciphertext & 0xFF;
-
-    }
-
-    // counter & nonce
-    for (int i = 0 ; i < 8 ; i++){
-      unsigned long received_counter = strtoul( jsonBuffer["counter"][i], nullptr, 16);
-      unsigned long received_nonce = strtoul( jsonBuffer["nonce"][i], nullptr, 16);
-      counter[i] = received_counter & 0xFF;
-      nonce[i] = received_nonce & 0xFF;
-    }
-
-    Decrypt(&chacha, encrypted, length, nonce, counter);
-  }
-
-  message = "";
 }
 
 // get values from sensors and add them to array
@@ -253,7 +262,6 @@ void Get_sensors_val(){
   float temperature = dht.getTemperature();
   float humidity = dht.getHumidity();
 
-// DHT11
   jsonSensors["temperature"] = temperature;
   jsonSensors["smoke"] = mq2.readSmoke();
   jsonSensors["humidity"] = humidity;
@@ -287,7 +295,7 @@ void Generate_nonce(ChaCha *chacha){
   chacha->clear();
 }
 
-void Encrypt(ChaCha *chacha, char *msg){
+void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_stop, long& time_start, long& time_stop){
   msg_length = strlen(msg);
   byte buffer[msg_length];
   byte plaintext[msg_length];
@@ -302,40 +310,41 @@ void Encrypt(ChaCha *chacha, char *msg){
       plaintext[i] = msg[i];
   }
 
-   for (int i = 0 ; i < msg_length ; i += msg_length) {
-      int len = msg_length - i;
-      if (len > msg_length)
-          len = msg_length;
-      chacha->encrypt(buffer + i, plaintext + i, msg_length);
-   }
+  time_start = millis();
+  cycle_start = ESP.getCycleCount();
+  for (int i = 0 ; i < msg_length ; i += msg_length) {
+    int len = msg_length - i;
+    if (len > msg_length)
+        len = msg_length;
+    chacha->encrypt(buffer + i, plaintext + i, msg_length);
+  }
+  cycle_stop = ESP.getCycleCount();
+  time_stop = millis();
 
   for (int i = 0 ; i < msg_length ; i++){
       msg[i] = buffer[i];
   }
 
-  Serial.println();
-
 }
 
-void Decrypt(ChaCha *chacha, byte ciphertext[], int length, byte nonce[], byte counter[]){
+void Decrypt(ChaCha *chacha, byte ciphertext[], byte plaintext[], int length, byte nonce[], byte counter[], uint32_t& cycle_start, uint32_t& cycle_stop, long& time_start, long& time_stop){
   byte buffer[length];
-  // byte plaintext[length];
 
   chacha->setNumRounds(rounds);
   chacha->setKey(key, keySize);
   chacha->setIV(nonce, chacha->ivSize());
   chacha->setCounter(counter, 8);
 
-  // for(int i = 0 ; i < length ; i++){
-  //   plaintext[i] = ciphertext[i];
-  // }
-
+  time_start = millis();
+  cycle_start = ESP.getCycleCount();
   for (int i = 0 ; i < length ; i += length) {
       int len = length - i;
       if (len > length)
           len = length;
-      chacha->decrypt(buffer + i, ciphertext + i, length);
+      chacha->decrypt(plaintext + i, ciphertext + i, length);
    }
+  cycle_stop = ESP.getCycleCount();
+  time_stop = millis();
 
   Serial.println("DECRYPTED : ");
   for(int i = 0 ; i < length ; i++){
