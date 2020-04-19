@@ -78,15 +78,6 @@ function mqtt_send(){
             io.emit('sensor', message.toString());
         }
     });
-
-    mqtt_cli.on('message', function (topic, message) {
-
-        if (topic === 'wemos/status'){
-            console.log(topic + ':' + message.toString());
-            io.emit('status', message.toString());
-        }
-
-    });
 }
 
 
