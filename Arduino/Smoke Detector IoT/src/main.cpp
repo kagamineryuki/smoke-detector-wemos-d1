@@ -9,7 +9,7 @@
 #include <Cipher.h>
 
 // PIN DEFINITIONS
-const int GPIO4 = 4;  //DHT11 Temp & Humidity
+const int GPIO4 = 2;  //DHT11 Temp & Humidity
 const int GPIO3 = 5;  //Green LED
 const int GPIO2 = 16; //Red LED
 const int GPIO5 = 14; // beeper
@@ -39,6 +39,7 @@ StaticJsonDocument<1500> jsonBuffer;
 const size_t capacity = JSON_OBJECT_SIZE(1) + 2048;
 DynamicJsonDocument jsonSensors(capacity);
 DynamicJsonDocument jsonEncryptedSensors(capacity);
+DynamicJsonDocument jsonDecryptedSensors(capacity);
 
 //first init
 WiFiClient espClient;
@@ -49,8 +50,8 @@ MQ2 mq2(A0);
 // Functions definition
 void callback(char* topic, byte* payload, unsigned int length);
 void Get_sensors_val();
-void Encrypt(BlockCipher *aes, String msg, byte output[], uint32_t *time_start, uint32_t *time_stop);
-void Decrypt(BlockCipher *aes, byte ciphertext[], int length, int aes_size, uint32_t *time_start, uint32_t *time_stop);
+void Encrypt(BlockCipher *aes, String msg, byte output[], uint32_t *cycle_start, uint32_t *cycle_stop, long *time_start, long *time_stop);
+void Decrypt(BlockCipher *aes, byte ciphertext[], byte plaintext[], int length, int aes_size, uint32_t *cycle_start, uint32_t *cycle_stop, long *time_start, long *time_stop);
 void approximate_aes_size(int& length, int& aes_length);
 
 void setup() {
@@ -104,7 +105,7 @@ void loop() {
 
     if (client.connect("client_1", mqttUser, mqttPassword)){ //trying to connect
 
-      client.subscribe("wemos/decrypt");
+      client.subscribe("wemos/encrypt_decrypt");
 
       Serial.println("Connected to MQTT Server");
       digitalWrite(GPIO3, HIGH); // GREEN LED ON
@@ -125,7 +126,8 @@ void loop() {
     byte result_encrypt[200];
     String encrypted_input_json = "";
     String encrypted_input_text = "";
-    uint32_t start_time, stop_time;
+    uint32_t cycle_start, cycle_stop;
+    long start_time, stop_time;
     int aes_size;
 
     jsonSensors.clear();
@@ -140,7 +142,7 @@ void loop() {
 
     // encrypt sensor
     approximate_aes_size(msg_length, aes_size);
-    Encrypt(&aes, input_string, result_encrypt, &start_time, &stop_time);
+    Encrypt(&aes, input_string, result_encrypt, &cycle_start, &cycle_stop, &start_time, &stop_time);
 
     for(int i = 0 ; i < aes_size ; i++){
       encrypted_input_text += String(result_encrypt[i], HEX);
@@ -149,17 +151,17 @@ void loop() {
       }
     }
 
-    // Serial.println("RESULT : " + encrypted_input_text);
-
     // build JSON for sensors
     jsonEncryptedSensors["encrypted"] = encrypted_input_text;
     jsonEncryptedSensors["time"] = String(stop_time - start_time);
     jsonEncryptedSensors["length"] = msg_length;
     jsonEncryptedSensors["aes_size"] = aes_size;
+    jsonEncryptedSensors["machine_id"] = 1;
+    jsonEncryptedSensors["encryption_type"] = "aes-128";
     serializeJson(jsonEncryptedSensors, encrypted_input_json);
 
     // publish it to wemos/
-    client.publish("wemos/sensors", (char *)encrypted_input_json.c_str());
+    client.publish("wemos/encrypt", (char *)encrypted_input_json.c_str());
 
     // clear out the temporary variable for the next reading
     result_encrypt[0] = '\0';
@@ -195,9 +197,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
   } else {
     //decryption goes here    
     byte encrypted[200];
+    byte decrypted[200];
     int length = jsonBuffer["length"];
     int aes_size = jsonBuffer["aes_size"];
-    uint32_t time_start, time_stop;
+    uint32_t cycle_start, cycle_stop;
+    long time_start, time_stop;
+    String json_result;
 
     // cipher message
     for (int i = 0 ; i < aes_size ; i++){
@@ -205,7 +210,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
       encrypted[i] = received_ciphertext & 0xFF;
     }
 
-    Decrypt(&aes, encrypted, length, aes_size, &time_start, &time_stop);
+    Decrypt(&aes, encrypted, decrypted, length, aes_size, &cycle_start, &cycle_stop,&time_start, &time_stop);
+    
+    jsonDecryptedSensors["machine_id"] = jsonBuffer["machine_id"];
+    jsonDecryptedSensors["encryption_type"] = jsonBuffer["encryption_type"];
+    jsonDecryptedSensors["decrypted"] = decrypted;
+    jsonDecryptedSensors["time"] = time_stop - time_start;
+    jsonDecryptedSensors["cycle"] = cycle_stop - cycle_start;
+    serializeJson(jsonDecryptedSensors, json_result);
+    
+    client.publish("wemos/decrypted", (char *)json_result.c_str());
   }
 
   message = "";
@@ -230,7 +244,7 @@ void approximate_aes_size(int& length, int& aes_length){
     }
 }
 
-void Encrypt(BlockCipher *aes, String msg, byte output[], uint32_t *time_start, uint32_t *time_stop){
+void Encrypt(BlockCipher *aes, String msg, byte output[], uint32_t *cycle_start, uint32_t *cycle_stop, long *time_start, long *time_stop){
   byte plaintext[200];
   byte *pointer_plaintext = plaintext;
   byte *pointer_output = output;
@@ -241,31 +255,34 @@ void Encrypt(BlockCipher *aes, String msg, byte output[], uint32_t *time_start, 
   
   aes->setKey(key, aes->keySize());
 
-  *time_start = ESP.getCycleCount();
+  *time_start = micros();
+  *cycle_start = ESP.getCycleCount();
   for (int i = 0 ; i < aes_size+1 ; i += 16){
     aes->encryptBlock(pointer_output + i, pointer_plaintext + i);
   }
-  *time_stop = ESP.getCycleCount();
+  *cycle_stop = ESP.getCycleCount();
+  *time_stop = micros();
 
   Serial.println();
 }
 
-void Decrypt(BlockCipher *aes, byte ciphertext[], int length, int aes_size, uint32_t *time_start, uint32_t *time_stop){
-  byte buffer[200];
-  byte *pointer_buffer = buffer;
+void Decrypt(BlockCipher *aes, byte ciphertext[], byte plaintext[], int length, int aes_size, uint32_t *cycle_start, uint32_t *cycle_stop, long *time_start, long *time_stop){
+  byte *pointer_plaintext = plaintext;
   byte *pointer_ciphertext = ciphertext;
 
   aes->setKey(key, aes->keySize());
 
-  *time_start = ESP.getCycleCount();
+  *time_start = micros();
+  *cycle_start = ESP.getCycleCount();
   for (int i = 0 ; i < aes_size ; i += 16){
-    aes->decryptBlock(pointer_buffer + i, pointer_ciphertext + i);
+    aes->decryptBlock(pointer_plaintext + i, pointer_ciphertext + i);
   }
-  *time_stop = ESP.getCycleCount();
+  *cycle_stop = ESP.getCycleCount();
+  *time_stop = micros();
 
   Serial.println("DECRYPTED : ");
   for (int i = 0 ; i < length ; i++){
-    Serial.print(char(buffer[i]));
+    Serial.print(char(plaintext[i]));
   }
 
   Serial.println();
