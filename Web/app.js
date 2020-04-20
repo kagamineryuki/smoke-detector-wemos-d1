@@ -37,7 +37,7 @@ function socket_connect() {
         });
 
         socket.on('repeat', function(data){
-            mqtt_cli.publish('wemos/repeat', JSON.stringify(json_processed));
+
         });
     });
 }
@@ -51,7 +51,7 @@ function mqtt_connect() {
         mqtt_cli.subscribe('wemos/encrypt', function (err) {
             // check subscribed or not
             if (!err) {
-                console.log("Subscribed to wemos/sensors");
+                console.log("Subscribed to wemos/encrypt");
             }
         });
 
@@ -68,14 +68,20 @@ function mqtt_send(){
             json_processed = {
                 "encrypted" : json_received.encrypted.toString().split(";"),
                 "nonce" : json_received.nonce.toString().split(";"),
+                "counter" : json_received.counter.toString().split(";"),
                 "time" : json_received.time,
                 "cycle" : json_received.cycle,
-                "counter" : json_received.counter.toString().split(";"),
                 "length": json_received.length,
+                "machine_id" : json_received.machine_id,
+                "encryption_type" : json_received.encryption_type
             };
 
             mqtt_cli.publish('wemos/encrypt_decrypt', JSON.stringify(json_processed));
             io.emit('sensor', message.toString());
+        }
+
+        if (topic === 'wemos/decrypt'){
+            console.log(topic + ':' + message.toString());
         }
     });
 }

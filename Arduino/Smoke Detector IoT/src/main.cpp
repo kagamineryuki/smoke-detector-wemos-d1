@@ -10,7 +10,7 @@
 #include <Base64.h>
 
 // PIN DEFINITIONS
-const int GPIO4 = 4;  //DHT11 Temp & Humidity
+const int GPIO4 = 2;  //DHT11 Temp & Humidity
 const int GPIO3 = 5;  //Green LED
 const int GPIO2 = 16; //Red LED
 const int GPIO5 = 14; // beeper

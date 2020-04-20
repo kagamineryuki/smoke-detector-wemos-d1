@@ -1,0 +1,126 @@
+warning: LF will be replaced by CRLF in Arduino/Smoke Detector IoT/.vscode/c_cpp_properties.json.
+The file will have its original line endings in your working directory
+warning: LF will be replaced by CRLF in Arduino/Smoke Detector IoT/.vscode/launch.json.
+The file will have its original line endings in your working directory
+[1mdiff --git a/Arduino/Smoke Detector IoT/.vscode/c_cpp_properties.json b/Arduino/Smoke Detector IoT/.vscode/c_cpp_properties.json[m
+[1mindex 811e3d1..adc01e3 100644[m
+[1m--- a/Arduino/Smoke Detector IoT/.vscode/c_cpp_properties.json[m	
+[1m+++ b/Arduino/Smoke Detector IoT/.vscode/c_cpp_properties.json[m	
+[36m@@ -6,8 +6,8 @@[m
+         {[m
+             "name": "Win32",[m
+             "includePath": [[m
+[31m-                "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/include",[m
+[31m-                "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/src",[m
+[32m+[m[32m                "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1 CHACHA20/Arduino/Smoke Detector IoT/include",[m
+[32m+[m[32m                "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1 CHACHA20/Arduino/Smoke Detector IoT/src",[m
+                 "C:/Users/Kaze Nakazawa/.platformio/lib/TroykaMQ_ID2537/src",[m
+                 "C:/Users/Kaze Nakazawa/.platformio/lib/PubSubClient_ID89/src",[m
+                 "C:/Users/Kaze Nakazawa/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WiFi/src",[m
+[36m@@ -21,6 +21,7 @@[m
+                 "C:/Users/Kaze Nakazawa/.platformio/packages/framework-arduinoespressif8266/tools/sdk/lwip2/include",[m
+                 "C:/Users/Kaze Nakazawa/.platformio/packages/framework-arduinoespressif8266/variants/d1_mini",[m
+                 "C:/Users/Kaze Nakazawa/.platformio/lib/ESP8266TrueRandom_ID1477",[m
+[32m+[m[32m                "C:/Users/Kaze Nakazawa/.platformio/lib/Low-Power_ID38",[m
+                 "C:/Users/Kaze Nakazawa/.platformio/lib/esp8266-chachapoly/src",[m
+                 "C:/Users/Kaze Nakazawa/.platformio/packages/framework-arduinoespressif8266/libraries/ArduinoOTA",[m
+                 "C:/Users/Kaze Nakazawa/.platformio/packages/framework-arduinoespressif8266/libraries/DNSServer/src",[m
+[36m@@ -56,8 +57,8 @@[m
+             "browse": {[m
+                 "limitSymbolsToIncludedHeaders": true,[m
+                 "path": [[m
+[31m-                    "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/include",[m
+[31m-                    "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/src",[m
+[32m+[m[32m                    "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1 CHACHA20/Arduino/Smoke Detector IoT/include",[m
+[32m+[m[32m                    "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1 CHACHA20/Arduino/Smoke Detector IoT/src",[m
+                     "C:/Users/Kaze Nakazawa/.platformio/lib/TroykaMQ_ID2537/src",[m
+                     "C:/Users/Kaze Nakazawa/.platformio/lib/PubSubClient_ID89/src",[m
+                     "C:/Users/Kaze Nakazawa/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WiFi/src",[m
+[36m@@ -71,6 +72,7 @@[m
+                     "C:/Users/Kaze Nakazawa/.platformio/packages/framework-arduinoespressif8266/tools/sdk/lwip2/include",[m
+                     "C:/Users/Kaze Nakazawa/.platformio/packages/framework-arduinoespressif8266/variants/d1_mini",[m
+                     "C:/Users/Kaze Nakazawa/.platformio/lib/ESP8266TrueRandom_ID1477",[m
+[32m+[m[32m                    "C:/Users/Kaze Nakazawa/.platformio/lib/Low-Power_ID38",[m
+                     "C:/Users/Kaze Nakazawa/.platformio/lib/esp8266-chachapoly/src",[m
+                     "C:/Users/Kaze Nakazawa/.platformio/packages/framework-arduinoespressif8266/libraries/ArduinoOTA",[m
+                     "C:/Users/Kaze Nakazawa/.platformio/packages/framework-arduinoespressif8266/libraries/DNSServer/src",[m
+[1mdiff --git a/Arduino/Smoke Detector IoT/.vscode/launch.json b/Arduino/Smoke Detector IoT/.vscode/launch.json[m
+[1mindex efad930..204e7d2 100644[m
+[1m--- a/Arduino/Smoke Detector IoT/.vscode/launch.json[m	
+[1m+++ b/Arduino/Smoke Detector IoT/.vscode/launch.json[m	
+[36m@@ -12,7 +12,7 @@[m
+             "type": "platformio-debug",[m
+             "request": "launch",[m
+             "name": "PIO Debug",[m
+[31m-            "executable": "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/.pio/build/d1_mini/firmware.elf",[m
+[32m+[m[32m            "executable": "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1 CHACHA20/Arduino/Smoke Detector IoT/.pio/build/d1_mini/firmware.elf",[m
+             "toolchainBinDir": "C:/Users/Kaze Nakazawa/.platformio/packages/toolchain-xtensa/bin",[m
+             "preLaunchTask": {[m
+                 "type": "PlatformIO",[m
+[36m@@ -24,7 +24,7 @@[m
+             "type": "platformio-debug",[m
+             "request": "launch",[m
+             "name": "PIO Debug (skip Pre-Debug)",[m
+[31m-            "executable": "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/.pio/build/d1_mini/firmware.elf",[m
+[32m+[m[32m            "executable": "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1 CHACHA20/Arduino/Smoke Detector IoT/.pio/build/d1_mini/firmware.elf",[m
+             "toolchainBinDir": "C:/Users/Kaze Nakazawa/.platformio/packages/toolchain-xtensa/bin",[m
+             "internalConsoleOptions": "openOnSessionStart"[m
+         }[m
+[1mdiff --git a/Arduino/Smoke Detector IoT/src/main.cpp b/Arduino/Smoke Detector IoT/src/main.cpp[m
+[1mindex 771d6ff..e559cfa 100644[m
+[1m--- a/Arduino/Smoke Detector IoT/src/main.cpp[m	
+[1m+++ b/Arduino/Smoke Detector IoT/src/main.cpp[m	
+[36m@@ -10,7 +10,7 @@[m
+ #include <Base64.h>[m
+ [m
+ // PIN DEFINITIONS[m
+[31m-const int GPIO4 = 4;  //DHT11 Temp & Humidity[m
+[32m+[m[32mconst int GPIO4 = 2;  //DHT11 Temp & Humidity[m
+ const int GPIO3 = 5;  //Green LED[m
+ const int GPIO2 = 16; //Red LED[m
+ const int GPIO5 = 14; // beeper[m
+[1mdiff --git a/Web/app.js b/Web/app.js[m
+[1mindex b7e8a80..4ea3389 100644[m
+[1m--- a/Web/app.js[m
+[1m+++ b/Web/app.js[m
+[36m@@ -37,7 +37,7 @@[m [mfunction socket_connect() {[m
+         });[m
+ [m
+         socket.on('repeat', function(data){[m
+[31m-            mqtt_cli.publish('wemos/repeat', JSON.stringify(json_processed));[m
+[32m+[m
+         });[m
+     });[m
+ }[m
+[36m@@ -51,7 +51,7 @@[m [mfunction mqtt_connect() {[m
+         mqtt_cli.subscribe('wemos/encrypt', function (err) {[m
+             // check subscribed or not[m
+             if (!err) {[m
+[31m-                console.log("Subscribed to wemos/sensors");[m
+[32m+[m[32m                console.log("Subscribed to wemos/encrypt");[m
+             }[m
+         });[m
+ [m
+[36m@@ -68,15 +68,21 @@[m [mfunction mqtt_send(){[m
+             json_processed = {[m
+                 "encrypted" : json_received.encrypted.toString().split(";"),[m
+                 "nonce" : json_received.nonce.toString().split(";"),[m
+[32m+[m[32m                "counter" : json_received.counter.toString().split(";"),[m
+                 "time" : json_received.time,[m
+                 "cycle" : json_received.cycle,[m
+[31m-                "counter" : json_received.counter.toString().split(";"),[m
+                 "length": json_received.length,[m
+[32m+[m[32m                "machine_id" : json_received.machine_id,[m
+[32m+[m[32m                "encryption_type" : json_received.encryption_type[m
+             };[m
+ [m
+             mqtt_cli.publish('wemos/encrypt_decrypt', JSON.stringify(json_processed));[m
+             io.emit('sensor', message.toString());[m
+         }[m
+[32m+[m
+[32m+[m[32m        if (topic === 'wemos/decrypt'){[m
+[32m+[m[32m            console.log(topic + ':' + message.toString());[m
+[32m+[m[32m        }[m
+     });[m
+ }[m
+ [m
