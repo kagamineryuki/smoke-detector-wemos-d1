@@ -9,9 +9,8 @@
 #include <Cipher.h>
 
 // PIN DEFINITIONS
-const int GPIO4 = 2;  //DHT11 Temp & Humidity
-const int GPIO3 = 5;  //Green LED
-const int GPIO2 = 16; //Red LED
+const int GPIO3 = 5;  // Trigger Interrupt
+const int GPIO4 = 2;  // DHT11 Temp & Humidity
 const int GPIO5 = 14; // beeper
 
 //Cipher
@@ -58,11 +57,6 @@ void setup() {
 // start the serial
   Serial.begin(115200);
 
-// initialize LEDs pin
-  pinMode(GPIO2, OUTPUT);
-  pinMode(GPIO3, OUTPUT);
-  digitalWrite(GPIO2, HIGH);
-
 // initialize dht library
   dht.setup(GPIO4, DHTesp::DHT11);
 
@@ -92,7 +86,6 @@ void setup() {
   client.setCallback(callback);
 
   digitalWrite(GPIO5, LOW);
-  delay(5000);
 }
 
 void loop() {
@@ -104,17 +97,12 @@ void loop() {
     Serial.println("Connecting to MQTT Server...");
 
     if (client.connect("client_1", mqttUser, mqttPassword)){ //trying to connect
-
       client.subscribe("wemos/encrypt_decrypt");
 
       Serial.println("Connected to MQTT Server");
-      digitalWrite(GPIO3, HIGH); // GREEN LED ON
-      digitalWrite(GPIO2, LOW); // RED LED OFF
     } else {
 
       Serial.print("Can't connect to MQTT Server : ");
-      digitalWrite(GPIO3, LOW); // GREEN LED OFF
-      digitalWrite(GPIO2, HIGH); // RED LED ON
       Serial.println(client.state()); //print the fault code
       delay(200); //wait 200ms
     }
@@ -202,7 +190,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     int aes_size = jsonBuffer["aes_size"];
     uint32_t cycle_start, cycle_stop;
     long time_start, time_stop;
-    String json_result;
+    String json_result, decrypted_result;
 
     // cipher message
     for (int i = 0 ; i < aes_size ; i++){
@@ -211,10 +199,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
     }
 
     Decrypt(&aes, encrypted, decrypted, length, aes_size, &cycle_start, &cycle_stop,&time_start, &time_stop);
+
+    for(int i = 0 ; i < length ; i++){
+      decrypted_result += char(decrypted[i]);
+    }
+    
+    jsonDecryptedSensors.clear();
     
     jsonDecryptedSensors["machine_id"] = jsonBuffer["machine_id"];
     jsonDecryptedSensors["encryption_type"] = jsonBuffer["encryption_type"];
-    jsonDecryptedSensors["decrypted"] = decrypted;
+    jsonDecryptedSensors["decrypted"] = decrypted_result;
     jsonDecryptedSensors["time"] = time_stop - time_start;
     jsonDecryptedSensors["cycle"] = cycle_stop - cycle_start;
     serializeJson(jsonDecryptedSensors, json_result);
@@ -255,6 +249,7 @@ void Encrypt(BlockCipher *aes, String msg, byte output[], uint32_t *cycle_start,
   
   aes->setKey(key, aes->keySize());
 
+  digitalWrite(GPIO3, HIGH);
   *time_start = micros();
   *cycle_start = ESP.getCycleCount();
   for (int i = 0 ; i < aes_size+1 ; i += 16){
@@ -262,6 +257,7 @@ void Encrypt(BlockCipher *aes, String msg, byte output[], uint32_t *cycle_start,
   }
   *cycle_stop = ESP.getCycleCount();
   *time_stop = micros();
+  digitalWrite(GPIO3, LOW);
 
   Serial.println();
 }
@@ -272,6 +268,7 @@ void Decrypt(BlockCipher *aes, byte ciphertext[], byte plaintext[], int length, 
 
   aes->setKey(key, aes->keySize());
 
+  digitalWrite(GPIO3, HIGH);
   *time_start = micros();
   *cycle_start = ESP.getCycleCount();
   for (int i = 0 ; i < aes_size ; i += 16){
@@ -279,6 +276,8 @@ void Decrypt(BlockCipher *aes, byte ciphertext[], byte plaintext[], int length, 
   }
   *cycle_stop = ESP.getCycleCount();
   *time_stop = micros();
+  digitalWrite(GPIO3, LOW);
+
 
   Serial.println("DECRYPTED : ");
   for (int i = 0 ; i < length ; i++){
