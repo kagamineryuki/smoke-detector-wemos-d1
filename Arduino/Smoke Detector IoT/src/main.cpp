@@ -229,6 +229,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
         byte encrypted[200];
         byte plaintext[200];
         String decrypted_string;
+        String json_result;
         int length = jsonBuffer["length"];
         ulong time_start, time_stop;
         uint32_t cycle_start, cycle_stop;
@@ -256,7 +257,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
   
         jsonDecryptedSensors["time"] = time_stop - time_start;
         jsonDecryptedSensors["cycle"] = cycle_stop - cycle_start;
-        client.publish("wemos/decrypted", (char *)decrypted_string.c_str());
+        jsonDecryptedSensors["machine_id"] = 1;
+        jsonDecryptedSensors["encryption_type"] = "chacha20";
+        jsonDecryptedSensors["length"] = length;
+        serializeJson(jsonDecryptedSensors, json_result);
+        client.publish("wemos/decrypted", (char *)json_result.c_str());
         Serial.println();
       }
 
