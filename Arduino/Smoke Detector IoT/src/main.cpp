@@ -11,9 +11,7 @@
 
 // PIN DEFINITIONS
 const int GPIO4 = 2;  //DHT11 Temp & Humidity
-const int GPIO3 = 5;  //Green LED
-const int GPIO2 = 16; //Red LED
-const int GPIO5 = 14; // beeper
+const int GPIO3 = 5;  //Interrupt trigger pin
 
 //Cypher
 byte key[16] = "Hello, World!!!";
@@ -63,17 +61,11 @@ void setup() {
 // start the serial
   Serial.begin(115200);
 
-// initialize LEDs pin
-  pinMode(GPIO2, OUTPUT);
+// interrupt trigger init
   pinMode(GPIO3, OUTPUT);
-  digitalWrite(GPIO2, HIGH);
 
 // initialize dht library
   dht.setup(GPIO4, DHTesp::DHT11);
-
-// initialize beeper pin
-  pinMode(GPIO5, OUTPUT);
-  digitalWrite(GPIO5, HIGH);
 
 // cipher
   Generate_nonce(&chacha);
@@ -98,9 +90,6 @@ void setup() {
 // connect to MQTT server
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
-
-  digitalWrite(GPIO5, LOW);
-  delay(5000);
 }
 
 void loop() {
@@ -114,15 +103,9 @@ void loop() {
     if (client.connect("client_1", mqttUser, mqttPassword)){ //trying to connect
 
       client.subscribe("wemos/encrypt_decrypt");
-
       Serial.println("Connected to MQTT Server");
-      digitalWrite(GPIO3, HIGH); // GREEN LED ON
-      digitalWrite(GPIO2, LOW); // RED LED OFF
     } else {
-
       Serial.print("Can't connect to MQTT Server : ");
-      digitalWrite(GPIO3, LOW); // GREEN LED OFF
-      digitalWrite(GPIO2, HIGH); // RED LED ON
       Serial.println(client.state()); //print the fault code
       delay(200); //wait 200ms
     }
@@ -323,6 +306,7 @@ void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_s
       plaintext[i] = msg[i];
   }
 
+  digitalWrite(GPIO3, HIGH);
   time_start = micros();
   cycle_start = ESP.getCycleCount();
   for (int i = 0 ; i < msg_length ; i += msg_length) {
@@ -333,6 +317,7 @@ void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_s
   }
   cycle_stop = ESP.getCycleCount();
   time_stop = micros();
+  digitalWrite(GPIO3, LOW);
 
   for (int i = 0 ; i < msg_length ; i++){
       msg[i] = buffer[i];
