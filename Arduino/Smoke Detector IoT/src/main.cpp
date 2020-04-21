@@ -8,10 +8,6 @@
 #include <AES.h>
 #include <Cipher.h>
 
-// PIN DEFINITIONS
-const int Digi5 = 5;  // Trigger Interrupt
-const int Digi4 = 2;  // DHT11 Temp & Humidity
-
 //Cipher
 byte key[16] = {0x48,0x65,0x6c,0x6c,0x6f,0x2c,0x20,0x57,0x6f,0x72,0x6c,0x64,0x21,0x21,0x21};
 int msg_length = 0;
@@ -22,10 +18,10 @@ const char* ssid = "ArduinoUno";
 const char* password = "qwerty123";
 
 // CloudMQTT
-const char* mqttServer = "m24.cloudmqtt.com";
-const int mqttPort = 12376;
-const char* mqttUser = "ikfemazr";
-const char* mqttPassword = "bQklMK_j41al";
+const char* mqttServer = "maqiatto.com";
+const int mqttPort = 1883;
+const char* mqttUser = "kagamineryuki@gmail.com";
+const char* mqttPassword = "kazekazekaze";
 
 // variable
 long millisNow = 0;
@@ -57,7 +53,7 @@ void setup() {
   Serial.begin(115200);
 
 // initialize dht library
-  dht.setup(D4, DHTesp::DHT11);
+  dht.setup(D8, DHTesp::DHT11);
 
 // initialize interrupt pin
   pinMode(D5, OUTPUT);
@@ -93,8 +89,8 @@ void loop() {
   while (!client.connected()){ //loop until connected to server !
     Serial.println("Connecting to MQTT Server...");
 
-    if (client.connect("client_1", mqttUser, mqttPassword)){ //trying to connect
-      client.subscribe("wemos/encrypt_decrypt");
+    if (client.connect("aes-128-1", mqttUser, mqttPassword)){ //trying to connect
+      client.subscribe("kagamineryuki@gmail.com/aes-128/encrypt_decrypt");
       Serial.println("Connected to MQTT Server");
     } else {
 
@@ -105,7 +101,7 @@ void loop() {
   }
 
 // Send temperature and humidity
-  if(millisNow > lastSendTH + 3000){
+  if(millisNow > lastSendTH + 2000){
     String input_string;
     byte result_encrypt[200];
     String encrypted_input_json = "";
@@ -145,7 +141,7 @@ void loop() {
     serializeJson(jsonEncryptedSensors, encrypted_input_json);
 
     // publish it to wemos/
-    client.publish("wemos/encrypt", (char *)encrypted_input_json.c_str());
+    client.publish("kagamineryuki@gmail.com/aes-128/encrypt", (char *)encrypted_input_json.c_str());
 
     // clear out the temporary variable for the next reading
     result_encrypt[0] = '\0';
@@ -209,7 +205,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     jsonDecryptedSensors["cycle"] = cycle_stop - cycle_start;
     serializeJson(jsonDecryptedSensors, json_result);
     
-    client.publish("wemos/decrypted", (char *)json_result.c_str());
+    client.publish("kagamineryuki@gmail.com/aes-128/decrypted", (char *)json_result.c_str());
   }
 
   message = "";
@@ -264,7 +260,7 @@ void Decrypt(BlockCipher *aes, byte ciphertext[], byte plaintext[], int length, 
 
   aes->setKey(key, aes->keySize());
 
-  digitalWrite(Digi5, HIGH);
+  digitalWrite(D5, HIGH);
   *time_start = micros();
   *cycle_start = ESP.getCycleCount();
   for (int i = 0 ; i < aes_size ; i += 16){
@@ -272,7 +268,7 @@ void Decrypt(BlockCipher *aes, byte ciphertext[], byte plaintext[], int length, 
   }
   *cycle_stop = ESP.getCycleCount();
   *time_stop = micros();
-  digitalWrite(Digi5, LOW);
+  digitalWrite(D5, LOW);
 
 
   Serial.println("DECRYPTED : ");
