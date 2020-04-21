@@ -9,9 +9,8 @@
 #include <Cipher.h>
 
 // PIN DEFINITIONS
-const int GPIO3 = 5;  // Trigger Interrupt
-const int GPIO4 = 2;  // DHT11 Temp & Humidity
-const int GPIO5 = 14; // beeper
+const int Digi5 = 5;  // Trigger Interrupt
+const int Digi4 = 2;  // DHT11 Temp & Humidity
 
 //Cipher
 byte key[16] = {0x48,0x65,0x6c,0x6c,0x6f,0x2c,0x20,0x57,0x6f,0x72,0x6c,0x64,0x21,0x21,0x21};
@@ -58,11 +57,10 @@ void setup() {
   Serial.begin(115200);
 
 // initialize dht library
-  dht.setup(GPIO4, DHTesp::DHT11);
+  dht.setup(D4, DHTesp::DHT11);
 
-// initialize beeper pin
-  pinMode(GPIO5, OUTPUT);
-  digitalWrite(GPIO5, HIGH);
+// initialize interrupt pin
+  pinMode(D5, OUTPUT);
 
 // init mq2
   mq2.calibrate();
@@ -85,7 +83,6 @@ void setup() {
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
 
-  digitalWrite(GPIO5, LOW);
 }
 
 void loop() {
@@ -98,7 +95,6 @@ void loop() {
 
     if (client.connect("client_1", mqttUser, mqttPassword)){ //trying to connect
       client.subscribe("wemos/encrypt_decrypt");
-
       Serial.println("Connected to MQTT Server");
     } else {
 
@@ -249,7 +245,7 @@ void Encrypt(BlockCipher *aes, String msg, byte output[], uint32_t *cycle_start,
   
   aes->setKey(key, aes->keySize());
 
-  digitalWrite(GPIO3, HIGH);
+  digitalWrite(D5, HIGH);
   *time_start = micros();
   *cycle_start = ESP.getCycleCount();
   for (int i = 0 ; i < aes_size+1 ; i += 16){
@@ -257,7 +253,7 @@ void Encrypt(BlockCipher *aes, String msg, byte output[], uint32_t *cycle_start,
   }
   *cycle_stop = ESP.getCycleCount();
   *time_stop = micros();
-  digitalWrite(GPIO3, LOW);
+  digitalWrite(D5, LOW);
 
   Serial.println();
 }
@@ -268,7 +264,7 @@ void Decrypt(BlockCipher *aes, byte ciphertext[], byte plaintext[], int length, 
 
   aes->setKey(key, aes->keySize());
 
-  digitalWrite(GPIO3, HIGH);
+  digitalWrite(Digi5, HIGH);
   *time_start = micros();
   *cycle_start = ESP.getCycleCount();
   for (int i = 0 ; i < aes_size ; i += 16){
@@ -276,7 +272,7 @@ void Decrypt(BlockCipher *aes, byte ciphertext[], byte plaintext[], int length, 
   }
   *cycle_stop = ESP.getCycleCount();
   *time_stop = micros();
-  digitalWrite(GPIO3, LOW);
+  digitalWrite(Digi5, LOW);
 
 
   Serial.println("DECRYPTED : ");
