@@ -9,10 +9,6 @@
 #include <Cipher.h>
 #include <Base64.h>
 
-// PIN DEFINITIONS
-const int GPIO4 = 2;  //DHT11 Temp & Humidity
-const int GPIO3 = 5;  //Interrupt trigger pin
-
 //Cypher
 byte key[16] = "Hello, World!!!";
 size_t keySize = 16;
@@ -27,10 +23,10 @@ const char* ssid = "ArduinoUno";
 const char* password = "qwerty123";
 
 // CloudMQTT
-const char* mqttServer = "m24.cloudmqtt.com";
-const int mqttPort = 12376;
-const char* mqttUser = "ikfemazr";
-const char* mqttPassword = "bQklMK_j41al";
+const char* mqttServer = "maqiatto.com";
+const int mqttPort = 1883;
+const char* mqttUser = "kagamineryuki@gmail.com";
+const char* mqttPassword = "kazekazekaze";
 
 // variable
 long millisNow = 0;
@@ -62,10 +58,10 @@ void setup() {
   Serial.begin(115200);
 
 // interrupt trigger init
-  pinMode(GPIO3, OUTPUT);
+  pinMode(D5, OUTPUT);
 
 // initialize dht library
-  dht.setup(GPIO4, DHTesp::DHT11);
+  dht.setup(D8, DHTesp::DHT11);
 
 // cipher
   Generate_nonce(&chacha);
@@ -100,9 +96,9 @@ void loop() {
   while (!client.connected()){ //loop until connected to server !
     Serial.println("Connecting to MQTT Server...");
 
-    if (client.connect("client_1", mqttUser, mqttPassword)){ //trying to connect
+    if (client.connect("chacha20-1", mqttUser, mqttPassword)){ //trying to connect
 
-      client.subscribe("wemos/encrypt_decrypt");
+      client.subscribe("kagamineryuki@gmail.com/chacha20/encrypt_decrypt");
       Serial.println("Connected to MQTT Server");
     } else {
       Serial.print("Can't connect to MQTT Server : ");
@@ -171,7 +167,7 @@ void loop() {
     serializeJson(jsonEncryptedSensors, encrypted_input_json);
 
     // publish it to wemos/
-    client.publish("wemos/encrypt", (char *)encrypted_input_json.c_str());
+    client.publish("kagamineryuki@gmail.com/chacha20/encrypt", (char *)encrypted_input_json.c_str());
 
     // clear out the temporary variable for the next reading
     input_string[0] = '\0';
@@ -186,7 +182,7 @@ void loop() {
 
 // callback function from receive message action
 void callback(char* topic, byte* payload, unsigned int length) {
-  if(strcmp(topic, "wemos/encrypt_decrypt") == 0){
+  if(strcmp(topic, "kagamineryuki@gmail.com/chacha20/encrypt_decrypt") == 0){
     String message = "";
 
     // DEBUGGING =======================================
@@ -234,17 +230,19 @@ void callback(char* topic, byte* payload, unsigned int length) {
         Decrypt(&chacha, encrypted, plaintext, length, nonce, counter, cycle_start, cycle_stop, time_start, time_stop);
         Serial.println("DECRYPTED : ");
         for(int i = 0 ; i < length ; i++){
-          decrypted_string += char(plaintext[i]);
+          decrypted_string += String(char(plaintext[i]));
           Serial.print(char(plaintext[i]));
         }
   
+        jsonDecryptedSensors.clear();
         jsonDecryptedSensors["time"] = time_stop - time_start;
         jsonDecryptedSensors["cycle"] = cycle_stop - cycle_start;
         jsonDecryptedSensors["machine_id"] = 1;
         jsonDecryptedSensors["encryption_type"] = "chacha20";
         jsonDecryptedSensors["length"] = length;
+        jsonDecryptedSensors["decrypted"] = decrypted_string;
         serializeJson(jsonDecryptedSensors, json_result);
-        client.publish("wemos/decrypted", (char *)json_result.c_str());
+        client.publish("kagamineryuki@gmail.com/chacha20/decrypted", (char *)json_result.c_str());
         Serial.println();
       }
 
@@ -306,7 +304,7 @@ void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_s
       plaintext[i] = msg[i];
   }
 
-  digitalWrite(GPIO3, HIGH);
+  digitalWrite(D5, HIGH);
   time_start = micros();
   cycle_start = ESP.getCycleCount();
   for (int i = 0 ; i < msg_length ; i += msg_length) {
@@ -317,7 +315,7 @@ void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_s
   }
   cycle_stop = ESP.getCycleCount();
   time_stop = micros();
-  digitalWrite(GPIO3, LOW);
+  digitalWrite(D5, LOW);
 
   for (int i = 0 ; i < msg_length ; i++){
       msg[i] = buffer[i];
@@ -332,6 +330,7 @@ void Decrypt(ChaCha *chacha, byte *ciphertext, byte *plaintext, int length, byte
   chacha->setIV(nonce, chacha->ivSize());
   chacha->setCounter(counter, 8);
 
+  digitalWrite(D5, HIGH);
   time_start = micros();
   cycle_start = ESP.getCycleCount();
   for (int i = 0 ; i < length ; i += length) {
@@ -342,4 +341,5 @@ void Decrypt(ChaCha *chacha, byte *ciphertext, byte *plaintext, int length, byte
   }
   cycle_stop = ESP.getCycleCount();
   time_stop = micros();
+  digitalWrite(D5, LOW);
 }

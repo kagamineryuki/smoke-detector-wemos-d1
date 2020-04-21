@@ -7,10 +7,10 @@ var mqtt = require('mqtt');
 var chacha = require('chacha-js');
 var io = require('socket.io').listen(server);
 
-var mqtt_cli = mqtt.connect('mqtts://m24.cloudmqtt.com',{
-    port: '22376',
-    username: 'ikfemazr',
-    password: 'bQklMK_j41al'
+var mqtt_cli = mqtt.connect('mqtt://maqiatto.com',{
+    port: '1883',
+    username: 'kagamineryuki@gmail.com',
+    password: 'kazekazekaze'
 });
 
 var bodyParser = require('body-parser');
@@ -48,10 +48,10 @@ function mqtt_connect() {
     mqtt_cli.on('connect', function () {
 
         // subscribe to wemos/sensors
-        mqtt_cli.subscribe('wemos/encrypt', function (err) {
+        mqtt_cli.subscribe('kagamineryuki@gmail.com/chacha20/encrypt', function (err) {
             // check subscribed or not
             if (!err) {
-                console.log("Subscribed to wemos/encrypt");
+                console.log("Subscribed to kagamineryuki@gmail.com/chacha20/encrypt");
             }
         });
 
@@ -61,7 +61,7 @@ function mqtt_connect() {
 function mqtt_send(){
     mqtt_cli.on('message', function (topic, message) {
 
-        if (topic === 'wemos/encrypt'){
+        if (topic === 'kagamineryuki@gmail.com/chacha20/encrypt'){
             console.log(topic + ':' + message.toString());
             
             json_received = JSON.parse(message.toString());
@@ -76,11 +76,11 @@ function mqtt_send(){
                 "encryption_type" : json_received.encryption_type
             };
 
-            mqtt_cli.publish('wemos/encrypt_decrypt', JSON.stringify(json_processed));
+            mqtt_cli.publish('kagamineryuki@gmail.com/chacha20/encrypt_decrypt', JSON.stringify(json_processed));
             io.emit('sensor', message.toString());
         }
 
-        if (topic === 'wemos/decrypt'){
+        if (topic === 'kagamineryuki@gmail.com/chacha20/decrypted'){
             console.log(topic + ':' + message.toString());
         }
     });
