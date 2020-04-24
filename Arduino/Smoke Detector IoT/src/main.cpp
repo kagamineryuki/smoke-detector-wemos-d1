@@ -118,6 +118,7 @@ void loop() {
     // make json for sensors
     Get_sensors_val();
     serializeJson(jsonSensors, input_string);
+    Serial.println(input_string);
     msg_length = input_string.length();
 
     // encrypt sensor
@@ -134,6 +135,7 @@ void loop() {
     // build JSON for sensors
     jsonEncryptedSensors["encrypted"] = encrypted_input_text;
     jsonEncryptedSensors["time"] = String(stop_time - start_time);
+    jsonEncryptedSensors["cycle"] = cycle_stop - cycle_start;
     jsonEncryptedSensors["length"] = msg_length;
     jsonEncryptedSensors["aes_size"] = aes_size;
     jsonEncryptedSensors["machine_id"] = 1;
@@ -201,6 +203,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     jsonDecryptedSensors["machine_id"] = jsonBuffer["machine_id"];
     jsonDecryptedSensors["encryption_type"] = jsonBuffer["encryption_type"];
     jsonDecryptedSensors["decrypted"] = decrypted_result;
+    jsonDecryptedSensors["length"] = length;
     jsonDecryptedSensors["time"] = time_stop - time_start;
     jsonDecryptedSensors["cycle"] = cycle_stop - cycle_start;
     serializeJson(jsonDecryptedSensors, json_result);
