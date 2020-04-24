@@ -17,7 +17,6 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
-
 connections = []; //save all socket connections to this array
 
 server.listen(5000);
@@ -25,26 +24,12 @@ socket_connect();
 mqtt_connect();
 mqtt_send();
 
-function socket_connect() {
-    io.sockets.on('connection', function (socket) {
-        connections.push(socket);
-        console.log("%s device(s) connected.", connections.length);
-
-        // handle disconnect
-        socket.on('disconnect', function (data) {
-            connections.splice(connections.indexOf(socket), 1);
-            console.log('%s device(s) disconnected', connections.length);
-        });
-
-    });
-}
-
 function mqtt_connect() {
     // mqtt connect
 
     mqtt_cli.on('connect', function () {
 
-        // subscribe to wemos/sensors
+        // subscribe to kagamineryuki@gmail.com/aes-128/encrypt
         mqtt_cli.subscribe('kagamineryuki@gmail.com/aes-128/encrypt', function (err) {
             // check subscribed or not
             if (!err) {
@@ -67,6 +52,7 @@ function mqtt_send(){
             json_processed = {
                 "encrypted" : encrypted,
                 "time" : json_received.time,
+                "cycle" : json_received.cycle,
                 "length": json_received.length,
                 "aes_size" : json_received.aes_size,
                 "machine_id" : json_received.machine_id,
@@ -81,9 +67,19 @@ function mqtt_send(){
 
         if (topic === 'kagamineryuki@gmail.com/aes-128/decrypted'){
             console.log(topic + ':' + message.toString());
-            io.emit('status', message.toString());
-        }
 
+            json_received = JSON.parse(message.toString());
+            json_processed = {
+                "decrypted" : json_received.decrypted,
+                "time" : json_received.time,
+                "cycle" : json_received.cycle,
+                "length": json_received.length,
+                "machine_id" : json_received.machine_id,
+                "encryption_type" : json_received.encryption_type
+            };
+
+
+        }
     });
 }
 
@@ -92,16 +88,16 @@ function mqtt_send(){
 app.use('/public', express.static(__dirname + "/public"));
 
 // GET method
-app.get("/", function (req, res) {
-    res.sendFile(__dirname + '/public/');
-});
+// app.get("/", function (req, res) {
+//     res.sendFile(__dirname + '/public/');
+// });
 
-app.get("/beeper_status", function (req, res) {
-    res.sendFile(__dirname + '/public/home_automation.html');
-});
+// app.get("/beeper_status", function (req, res) {
+//     res.sendFile(__dirname + '/public/home_automation.html');
+// });
 
 // POST method
-app.post("/send-command", function (req, res) {
-    var command = req.body.command;
-    mqtt_cli.publish('wemos/command', command);
-});
+// app.post("/send-command", function (req, res) {
+//     var command = req.body.command;
+//     mqtt_cli.publish('wemos/command', command);
+// });
