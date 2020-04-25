@@ -16,6 +16,10 @@ AES128 aes;
 //wifi credential
 const char* ssid = "ArduinoUno";
 const char* password = "qwerty123";
+IPAddress ip(192,168,50,254);
+IPAddress subnet(255,255,255,0);
+IPAddress gw(192,168,50,1);
+IPAddress dns(192,168,50,1);
 
 // CloudMQTT
 const char* mqttServer = "maqiatto.com";
@@ -49,6 +53,15 @@ void Decrypt(BlockCipher *aes, byte ciphertext[], byte plaintext[], int length, 
 void approximate_aes_size(int& length, int& aes_length);
 
 void setup() {
+  //turn wifi off
+  WiFi.mode( WIFI_OFF );
+  WiFi.forceSleepBegin();
+  delay( 1 );
+
+  // pull pin D0 up
+  pinMode(D0, OUTPUT);
+  digitalWrite(D0, HIGH);
+
 // start the serial
   Serial.begin(115200);
 
@@ -62,6 +75,11 @@ void setup() {
   mq2.calibrate();
 
 // Connect to wifi
+  WiFi.forceSleepWake();
+  delay( 1 );
+
+  WiFi.mode(WIFI_STA);
+  WiFi.config(ip, gw, subnet, dns);
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED){
