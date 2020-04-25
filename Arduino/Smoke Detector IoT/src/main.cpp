@@ -21,6 +21,10 @@ ChaCha chacha;
 //wifi credential
 const char* ssid = "ArduinoUno";
 const char* password = "qwerty123";
+IPAddress ip(192,168,50,252);
+IPAddress subnet(255,255,255,0);
+IPAddress gw(192,168,50,1);
+IPAddress dns(192,168,50,1);
 
 // CloudMQTT
 const char* mqttServer = "maqiatto.com";
@@ -54,6 +58,11 @@ void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_s
 void Decrypt(ChaCha *chacha, byte *ciphertext, byte *plaintext, int length, byte *nonce, byte *counter, uint32_t& cycle_start, uint32_t& cycle_stop, ulong& time_start, ulong& time_stop);
 
 void setup() {
+ //turn wifi off
+  WiFi.mode( WIFI_OFF );
+  WiFi.forceSleepBegin();
+  delay( 1 );
+
 // start the serial
   Serial.begin(115200);
 
@@ -61,7 +70,7 @@ void setup() {
   pinMode(D5, OUTPUT);
 
 // initialize dht library
-  dht.setup(D8, DHTesp::DHT11);
+  dht.setup(D4, DHTesp::DHT11);
 
 // cipher
   Generate_nonce(&chacha);
@@ -70,6 +79,11 @@ void setup() {
   mq2.calibrate();
 
 // Connect to wifi
+  WiFi.forceSleepWake();
+  delay( 1 );
+
+  WiFi.mode(WIFI_STA);
+  // WiFi.config(ip, gw, subnet, dns);
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED){
@@ -94,16 +108,21 @@ void loop() {
 
   //Connect to the mqtt server
   while (!client.connected()){ //loop until connected to server !
-    Serial.println("Connecting to MQTT Server...");
-
-    if (client.connect("chacha20-1", mqttUser, mqttPassword)){ //trying to connect
-
-      client.subscribe("kagamineryuki@gmail.com/chacha20/encrypt_decrypt");
-      Serial.println("Connected to MQTT Server");
+    if(WiFi.status() != WL_CONNECTED){
+      WiFi.disconnect();
+      WiFi.begin(ssid, password);
+      delay(5000); //delay 500ms before trying again
+      Serial.println("Trying to connect to SSID");
     } else {
-      Serial.print("Can't connect to MQTT Server : ");
-      Serial.println(client.state()); //print the fault code
-      delay(200); //wait 200ms
+      Serial.println("Connecting to MQTT Server...");
+
+      if (client.connect("client_1", mqttUser, mqttPassword)){ //trying to connect
+        Serial.println("Connected to MQTT Server");
+      } else {
+        Serial.print("Can't connect to MQTT Server : ");
+        Serial.println(client.state()); //print the fault code
+        delay(200); //wait 200ms
+      }
     }
   }
 
@@ -305,6 +324,9 @@ void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_s
   }
 
   digitalWrite(D5, HIGH);
+  delay(100);
+  digitalWrite(D5, LOW);
+  
   time_start = micros();
   cycle_start = ESP.getCycleCount();
   for (int i = 0 ; i < msg_length ; i += msg_length) {
@@ -315,6 +337,9 @@ void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_s
   }
   cycle_stop = ESP.getCycleCount();
   time_stop = micros();
+
+  digitalWrite(D5, HIGH);
+  delay(100);
   digitalWrite(D5, LOW);
 
   for (int i = 0 ; i < msg_length ; i++){
@@ -331,6 +356,9 @@ void Decrypt(ChaCha *chacha, byte *ciphertext, byte *plaintext, int length, byte
   chacha->setCounter(counter, 8);
 
   digitalWrite(D5, HIGH);
+  delay(100);
+  digitalWrite(D5, LOW);
+
   time_start = micros();
   cycle_start = ESP.getCycleCount();
   for (int i = 0 ; i < length ; i += length) {
@@ -341,5 +369,8 @@ void Decrypt(ChaCha *chacha, byte *ciphertext, byte *plaintext, int length, byte
   }
   cycle_stop = ESP.getCycleCount();
   time_stop = micros();
+  
+  digitalWrite(D5, HIGH);
+  delay(100);
   digitalWrite(D5, LOW);
 }
