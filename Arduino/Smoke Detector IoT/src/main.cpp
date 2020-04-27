@@ -14,8 +14,12 @@ int msg_length = 0;
 AES128 aes;
 
 //wifi credential
-const char* ssid = "HN-03-1";
-const char* password = "<Ir0Be><5D3v1#vW><A!v#N7@f4#L>";
+const char* ssid = "Home";
+const char* password = "rumah123";
+IPAddress ip(192,168,0,253);
+IPAddress gw(192,168,0,1);
+IPAddress subnet(255,255,255,0);
+IPAddress dns(192,168,0,1);
 
 // CloudMQTT
 const char* mqttServer = "maqiatto.com";
@@ -62,7 +66,7 @@ void setup() {
   Serial.begin(115200);
 
 // initialize dht library
-  dht.setup(D8, DHTesp::DHT11);
+  dht.setup(D4, DHTesp::DHT11);
 
 // initialize interrupt pin
   pinMode(D5, OUTPUT);
@@ -75,6 +79,7 @@ void setup() {
   delay( 1 );
 
   WiFi.mode(WIFI_STA);
+  WiFi.config(ip, gw, subnet, dns);
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED){
@@ -159,6 +164,8 @@ void setup() {
     delay(100);
   }
 
+  WiFi.disconnect();
+  delay(1);
   Serial.println("Going to sleep for 30 seconds");
   ESP.deepSleep(3e7, WAKE_RF_DISABLED);
 }
