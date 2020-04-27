@@ -14,12 +14,8 @@ int msg_length = 0;
 AES128 aes;
 
 //wifi credential
-const char* ssid = "ArduinoUno";
-const char* password = "qwerty123";
-IPAddress ip(192,168,50,254);
-IPAddress subnet(255,255,255,0);
-IPAddress gw(192,168,50,1);
-IPAddress dns(192,168,50,1);
+const char* ssid = "HN-03-1";
+const char* password = "<Ir0Be><5D3v1#vW><A!v#N7@f4#L>";
 
 // CloudMQTT
 const char* mqttServer = "maqiatto.com";
@@ -79,7 +75,6 @@ void setup() {
   delay( 1 );
 
   WiFi.mode(WIFI_STA);
-  WiFi.config(ip, gw, subnet, dns);
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED){
@@ -97,13 +92,6 @@ void setup() {
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
 
-}
-
-void loop() {
-  // put your main code here, to run repeatedly:
-  millisNow = millis();
-
-  //Connect to the mqtt server
   while (!client.connected()){ //loop until connected to server !
     Serial.println("Connecting to MQTT Server...");
 
@@ -118,60 +106,64 @@ void loop() {
     }
   }
 
-// Send temperature and humidity
-  if(millisNow > lastSendTH + 2000){
-    String input_string;
-    byte result_encrypt[200];
-    String encrypted_input_json = "";
-    String encrypted_input_text = "";
-    uint32_t cycle_start, cycle_stop;
-    long start_time, stop_time;
-    int aes_size;
+  String input_string;
+  byte result_encrypt[200];
+  String encrypted_input_json = "";
+  String encrypted_input_text = "";
+  uint32_t cycle_start, cycle_stop;
+  long start_time, stop_time;
+  int aes_size;
 
-    jsonSensors.clear();
-    jsonBuffer.clear();
-    jsonEncryptedSensors.clear();
-    encrypted_input_json.clear();
+  jsonSensors.clear();
+  jsonBuffer.clear();
+  jsonEncryptedSensors.clear();
+  encrypted_input_json.clear();
 
-    // make json for sensors
-    Get_sensors_val();
-    serializeJson(jsonSensors, input_string);
-    Serial.println(input_string);
-    msg_length = input_string.length();
+  // make json for sensors
+  Get_sensors_val();
+  serializeJson(jsonSensors, input_string);
+  Serial.println(input_string);
+  msg_length = input_string.length();
 
-    // encrypt sensor
-    approximate_aes_size(msg_length, aes_size);
-    Encrypt(&aes, input_string, result_encrypt, &cycle_start, &cycle_stop, &start_time, &stop_time);
+  // encrypt sensor
+  approximate_aes_size(msg_length, aes_size);
+  Encrypt(&aes, input_string, result_encrypt, &cycle_start, &cycle_stop, &start_time, &stop_time);
 
-    for(int i = 0 ; i < aes_size ; i++){
-      encrypted_input_text += String(result_encrypt[i], HEX);
-      if (i < aes_size-1){
-        encrypted_input_text += ";";
-      }
+  for(int i = 0 ; i < aes_size ; i++){
+    encrypted_input_text += String(result_encrypt[i], HEX);
+    if (i < aes_size-1){
+      encrypted_input_text += ";";
     }
-
-    // build JSON for sensors
-    jsonEncryptedSensors["encrypted"] = encrypted_input_text;
-    jsonEncryptedSensors["time"] = String(stop_time - start_time);
-    jsonEncryptedSensors["cycle"] = cycle_stop - cycle_start;
-    jsonEncryptedSensors["length"] = msg_length;
-    jsonEncryptedSensors["aes_size"] = aes_size;
-    jsonEncryptedSensors["machine_id"] = 1;
-    jsonEncryptedSensors["encryption_type"] = "aes-128";
-    serializeJson(jsonEncryptedSensors, encrypted_input_json);
-
-    // publish it to wemos/
-    client.publish("kagamineryuki@gmail.com/aes-128/encrypt", (char *)encrypted_input_json.c_str());
-
-    // clear out the temporary variable for the next reading
-    result_encrypt[0] = '\0';
-
-    Serial.println();
-
-    lastSendTH = millisNow;
   }
 
-  client.loop();
+  // build JSON for sensors
+  jsonEncryptedSensors["encrypted"] = encrypted_input_text;
+  jsonEncryptedSensors["time"] = String(stop_time - start_time);
+  jsonEncryptedSensors["cycle"] = cycle_stop - cycle_start;
+  jsonEncryptedSensors["length"] = msg_length;
+  jsonEncryptedSensors["aes_size"] = aes_size;
+  jsonEncryptedSensors["machine_id"] = 1;
+  jsonEncryptedSensors["encryption_type"] = "aes-128";
+  serializeJson(jsonEncryptedSensors, encrypted_input_json);
+
+  // publish it to wemos/
+  client.publish("kagamineryuki@gmail.com/aes-128/encrypt", (char *)encrypted_input_json.c_str());
+
+  // clear out the temporary variable for the next reading
+  result_encrypt[0] = '\0';
+
+  Serial.println();
+
+  for(int i = 0 ; i < 20 ; i++){
+    client.loop();
+    delay(100);
+  }
+
+  Serial.println("Going to sleep for 30 seconds");
+  ESP.deepSleep(3e7, WAKE_RF_DISABLED);
+}
+
+void loop() {
 }
 
 // callback function from receive message action
