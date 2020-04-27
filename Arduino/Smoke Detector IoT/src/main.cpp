@@ -19,12 +19,8 @@ int msg_length = 0;
 ChaCha chacha;
 
 //wifi credential
-const char* ssid = "ArduinoUno";
-const char* password = "qwerty123";
-IPAddress ip(192,168,50,252);
-IPAddress subnet(255,255,255,0);
-IPAddress gw(192,168,50,1);
-IPAddress dns(192,168,50,1);
+const char* ssid = "HN-03-1";
+const char* password = "<Ir0Be><5D3v1#vW><A!v#N7@f4#L>";
 
 // CloudMQTT
 const char* mqttServer = "maqiatto.com";
@@ -83,7 +79,6 @@ void setup() {
   delay( 1 );
 
   WiFi.mode(WIFI_STA);
-  // WiFi.config(ip, gw, subnet, dns);
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED){
@@ -100,13 +95,7 @@ void setup() {
 // connect to MQTT server
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
-}
 
-void loop() {
-  // put your main code here, to run repeatedly:
-  millisNow = millis();
-
-  //Connect to the mqtt server
   while (!client.connected()){ //loop until connected to server !
     if(WiFi.status() != WL_CONNECTED){
       WiFi.disconnect();
@@ -126,77 +115,81 @@ void loop() {
     }
   }
 
-// Send temperature and humidity
-  if(millisNow > lastSendTH + 3000){
-    char input_string[200];
-    String encrypted_input_json = "";
-    String encrypted_input_text = "";
-    String buffer_nonce = "";
-    String buffer_counter = "";
-    ulong time_start, time_stop;
-    uint32_t cycle_start, cycle_stop;
+  char input_string[200];
+  String encrypted_input_json = "";
+  String encrypted_input_text = "";
+  String buffer_nonce = "";
+  String buffer_counter = "";
+  ulong time_start, time_stop;
+  uint32_t cycle_start, cycle_stop;
 
-    jsonSensors.clear();
-    jsonBuffer.clear();
-    jsonEncryptedSensors.clear();
-    encrypted_input_json.clear();
+  jsonSensors.clear();
+  jsonBuffer.clear();
+  jsonEncryptedSensors.clear();
+  encrypted_input_json.clear();
 
-    // make json for sensors
-    Get_sensors_val();
-    serializeJson(jsonSensors, input_string);
+  // make json for sensors
+  Get_sensors_val();
+  serializeJson(jsonSensors, input_string);
 
-    // encrypt sensor
-    Generate_nonce(&chacha);
-    Encrypt(&chacha, input_string, cycle_start, cycle_stop, time_start, time_stop);
-    
-    // nonce to hex nonce
-    for(int i = 0; i < 8 ; i++){
-      buffer_nonce += String(nonce[i], HEX);
-      if(i < 7){
-        buffer_nonce += ";";
-      }
+  // encrypt sensor
+  Generate_nonce(&chacha);
+  Encrypt(&chacha, input_string, cycle_start, cycle_stop, time_start, time_stop);
+  
+  // nonce to hex nonce
+  for(int i = 0; i < 8 ; i++){
+    buffer_nonce += String(nonce[i], HEX);
+    if(i < 7){
+      buffer_nonce += ";";
     }
-    buffer_nonce.toUpperCase();
-    
-    // encryp. to int
-    for(int i = 0; i < msg_length ; i++){
-      encrypted_input_text += String(input_string[i], HEX);
-      if(i < msg_length-1){
-        encrypted_input_text += ";";
-      }
+  }
+  buffer_nonce.toUpperCase();
+  
+  // encryp. to int
+  for(int i = 0; i < msg_length ; i++){
+    encrypted_input_text += String(input_string[i], HEX);
+    if(i < msg_length-1){
+      encrypted_input_text += ";";
     }
-    encrypted_input_text.toUpperCase();
+  }
+  encrypted_input_text.toUpperCase();
 
-    // counter to byte
-    for(int i = 0; i < 8 ; i++){
-      buffer_counter += String(counter[i], HEX); 
-      if(i < 7){
-        buffer_counter += ";";
-      }
+  // counter to byte
+  for(int i = 0; i < 8 ; i++){
+    buffer_counter += String(counter[i], HEX); 
+    if(i < 7){
+      buffer_counter += ";";
     }
-    buffer_counter.toUpperCase();
+  }
+  buffer_counter.toUpperCase();
 
-    // build JSON for sensors
-    jsonEncryptedSensors["nonce"] = buffer_nonce;
-    jsonEncryptedSensors["encrypted"] = encrypted_input_text;
-    jsonEncryptedSensors["length"] = msg_length;
-    jsonEncryptedSensors["counter"] = buffer_counter;
-    jsonEncryptedSensors["time"] = time_stop - time_start;
-    jsonEncryptedSensors["cycle"] = cycle_stop - cycle_start;
-    serializeJson(jsonEncryptedSensors, encrypted_input_json);
+  // build JSON for sensors
+  jsonEncryptedSensors["nonce"] = buffer_nonce;
+  jsonEncryptedSensors["encrypted"] = encrypted_input_text;
+  jsonEncryptedSensors["length"] = msg_length;
+  jsonEncryptedSensors["counter"] = buffer_counter;
+  jsonEncryptedSensors["time"] = time_stop - time_start;
+  jsonEncryptedSensors["cycle"] = cycle_stop - cycle_start;
+  serializeJson(jsonEncryptedSensors, encrypted_input_json);
 
-    // publish it to wemos/
-    client.publish("kagamineryuki@gmail.com/chacha20/encrypt", (char *)encrypted_input_json.c_str());
+  // publish it to wemos/
+  client.publish("kagamineryuki@gmail.com/chacha20/encrypt", (char *)encrypted_input_json.c_str());
 
-    // clear out the temporary variable for the next reading
-    input_string[0] = '\0';
+  // clear out the temporary variable for the next reading
+  input_string[0] = '\0';
 
-    Serial.println();
+  Serial.println();
 
-    lastSendTH = millisNow;
+  for(int i = 0 ; i < 20 ; i++){
+    client.loop();
+    delay(100);
   }
 
-  client.loop();
+  Serial.println("Sleep for 30 secs");
+  ESP.deepSleep(3e7, WAKE_RF_DISABLED);
+}
+
+void loop() {
 }
 
 // callback function from receive message action
@@ -324,8 +317,6 @@ void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_s
   }
 
   digitalWrite(D5, HIGH);
-  delay(100);
-  digitalWrite(D5, LOW);
   
   time_start = micros();
   cycle_start = ESP.getCycleCount();
@@ -338,8 +329,6 @@ void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_s
   cycle_stop = ESP.getCycleCount();
   time_stop = micros();
 
-  digitalWrite(D5, HIGH);
-  delay(100);
   digitalWrite(D5, LOW);
 
   for (int i = 0 ; i < msg_length ; i++){
@@ -356,8 +345,6 @@ void Decrypt(ChaCha *chacha, byte *ciphertext, byte *plaintext, int length, byte
   chacha->setCounter(counter, 8);
 
   digitalWrite(D5, HIGH);
-  delay(100);
-  digitalWrite(D5, LOW);
 
   time_start = micros();
   cycle_start = ESP.getCycleCount();
@@ -370,7 +357,5 @@ void Decrypt(ChaCha *chacha, byte *ciphertext, byte *plaintext, int length, byte
   cycle_stop = ESP.getCycleCount();
   time_stop = micros();
   
-  digitalWrite(D5, HIGH);
-  delay(100);
   digitalWrite(D5, LOW);
 }
