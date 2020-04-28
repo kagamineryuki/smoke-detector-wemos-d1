@@ -7,7 +7,6 @@
 #include <TroykaMQ.h>
 #include <ChaCha.h>
 #include <Cipher.h>
-#include <Base64.h>
 
 //Cypher
 byte key[16] = "Hello, World!!!";
@@ -19,12 +18,13 @@ int msg_length = 0;
 ChaCha chacha;
 
 //wifi credential
-const char* ssid = "Home";
-const char* password = "rumah123";
-IPAddress ip(192,168,0,252);
-IPAddress gw(192,168,0,1);
+const char* ssid = "HN-03-1";
+const char* password = "<Ir0Be><5D3v1#vW><A!v#N7@f4#L>";
+IPAddress ip(192,168,30,52);
+IPAddress gw(192,168,30,1);
 IPAddress subnet(255,255,255,0);
-IPAddress dns(192,168,0,1);
+IPAddress dns(192,168,30,1);
+
 // CloudMQTT
 const char* mqttServer = "maqiatto.com";
 const int mqttPort = 1883;
@@ -57,6 +57,14 @@ void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_s
 void Decrypt(ChaCha *chacha, byte *ciphertext, byte *plaintext, int length, byte *nonce, byte *counter, uint32_t& cycle_start, uint32_t& cycle_stop, ulong& time_start, ulong& time_stop);
 
 void setup() {
+  char input_string[200];
+  String encrypted_input_json = "";
+  String encrypted_input_text = "";
+  String buffer_nonce = "";
+  String buffer_counter = "";
+  ulong time_start, time_stop;
+  uint32_t cycle_start, cycle_stop;
+
  //turn wifi off
   WiFi.mode( WIFI_OFF );
   WiFi.forceSleepBegin();
@@ -100,32 +108,14 @@ void setup() {
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
 
-  while (!client.connected()){ //loop until connected to server !
-    if(WiFi.status() != WL_CONNECTED){
-      WiFi.disconnect();
-      WiFi.begin(ssid, password);
-      delay(5000); //delay 500ms before trying again
-      Serial.println("Trying to connect to SSID");
-    } else {
-      Serial.println("Connecting to MQTT Server...");
-
-      if (client.connect("client_1", mqttUser, mqttPassword)){ //trying to connect
-        Serial.println("Connected to MQTT Server");
-      } else {
-        Serial.print("Can't connect to MQTT Server : ");
-        Serial.println(client.state()); //print the fault code
-        delay(200); //wait 200ms
-      }
-    }
+  Serial.println("Connecting to MQTT Server...");
+  if (client.connect("client_1", mqttUser, mqttPassword)){ //trying to connect
+    Serial.println("Connected to MQTT Server");
+  } else {
+    Serial.print("Can't connect to MQTT Server : ");
+    Serial.println(client.state()); //print the fault code
+    delay(200); //wait 200ms
   }
-
-  char input_string[200];
-  String encrypted_input_json = "";
-  String encrypted_input_text = "";
-  String buffer_nonce = "";
-  String buffer_counter = "";
-  ulong time_start, time_stop;
-  uint32_t cycle_start, cycle_stop;
 
   jsonSensors.clear();
   jsonBuffer.clear();

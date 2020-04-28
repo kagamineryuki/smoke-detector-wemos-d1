@@ -12,8 +12,8 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug",
-            "executable": "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1 CHACHA20/Arduino/Smoke Detector IoT/.pio/build/d1_mini/firmware.elf",
-            "toolchainBinDir": "C:/Users/Kaze Nakazawa/.platformio/packages/toolchain-xtensa/bin",
+            "executable": "/home/kaze/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/.pio/build/d1_mini/firmware.elf",
+            "toolchainBinDir": "/home/kaze/.platformio/packages/toolchain-xtensa/bin",
             "preLaunchTask": {
                 "type": "PlatformIO",
                 "task": "Pre-Debug"
@@ -24,8 +24,8 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
-            "executable": "C:/Users/Kaze Nakazawa/Desktop/smoke-detector-wemos-d1 CHACHA20/Arduino/Smoke Detector IoT/.pio/build/d1_mini/firmware.elf",
-            "toolchainBinDir": "C:/Users/Kaze Nakazawa/.platformio/packages/toolchain-xtensa/bin",
+            "executable": "/home/kaze/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/.pio/build/d1_mini/firmware.elf",
+            "toolchainBinDir": "/home/kaze/.platformio/packages/toolchain-xtensa/bin",
             "internalConsoleOptions": "openOnSessionStart"
         }
     ]
