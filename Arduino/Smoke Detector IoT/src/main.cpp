@@ -14,12 +14,12 @@ int msg_length = 0;
 AES128 aes;
 
 //wifi credential
-const char* ssid = "Home";
-const char* password = "rumah123";
-IPAddress ip(192,168,0,253);
-IPAddress gw(192,168,0,1);
+const char* ssid = "HN-03-1";
+const char* password = "<Ir0Be><5D3v1#vW><A!v#N7@f4#L>";
+IPAddress ip(192,168,30,2);
+IPAddress gw(192,168,30,1);
 IPAddress subnet(255,255,255,0);
-IPAddress dns(192,168,0,1);
+IPAddress dns(192,168,30,1);
 
 // CloudMQTT
 const char* mqttServer = "maqiatto.com";
@@ -53,6 +53,14 @@ void Decrypt(BlockCipher *aes, byte ciphertext[], byte plaintext[], int length, 
 void approximate_aes_size(int& length, int& aes_length);
 
 void setup() {
+  String input_string;
+  byte result_encrypt[200];
+  String encrypted_input_json = "";
+  String encrypted_input_text = "";
+  uint32_t cycle_start, cycle_stop;
+  long start_time, stop_time;
+  int aes_size;
+
   //turn wifi off
   WiFi.mode( WIFI_OFF );
   WiFi.forceSleepBegin();
@@ -62,14 +70,15 @@ void setup() {
   pinMode(D0, OUTPUT);
   digitalWrite(D0, HIGH);
 
+  // pull pin for triggering current measurement up
+  pinMode(D5, OUTPUT);
+  digitalWrite(D5, LOW);
+
 // start the serial
   Serial.begin(115200);
 
 // initialize dht library
   dht.setup(D4, DHTesp::DHT11);
-
-// initialize interrupt pin
-  pinMode(D5, OUTPUT);
 
 // init mq2
   mq2.calibrate();
@@ -97,28 +106,17 @@ void setup() {
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
 
-  while (!client.connected()){ //loop until connected to server !
-    Serial.println("Connecting to MQTT Server...");
+  Serial.println("Connecting to MQTT Server...");
 
-    if (client.connect("aes-128-1", mqttUser, mqttPassword)){ //trying to connect
-      client.subscribe("kagamineryuki@gmail.com/aes-128/encrypt_decrypt");
-      Serial.println("Connected to MQTT Server");
-    } else {
+  if (client.connect("aes-128-1", mqttUser, mqttPassword)){ //trying to connect
+    client.subscribe("kagamineryuki@gmail.com/aes-128/encrypt_decrypt");
+    Serial.println("Connected to MQTT Server");
+  } else {
 
-      Serial.print("Can't connect to MQTT Server : ");
-      Serial.println(client.state()); //print the fault code
-      delay(200); //wait 200ms
-    }
+    Serial.print("Can't connect to MQTT Server : ");
+    Serial.println(client.state()); //print the fault code
+    delay(200); //wait 200ms
   }
-
-  String input_string;
-  byte result_encrypt[200];
-  String encrypted_input_json = "";
-  String encrypted_input_text = "";
-  uint32_t cycle_start, cycle_stop;
-  long start_time, stop_time;
-  int aes_size;
-
   jsonSensors.clear();
   jsonBuffer.clear();
   jsonEncryptedSensors.clear();
@@ -152,12 +150,14 @@ void setup() {
   serializeJson(jsonEncryptedSensors, encrypted_input_json);
 
   // publish it to wemos/
-  client.publish("kagamineryuki@gmail.com/aes-128/encrypt", (char *)encrypted_input_json.c_str());
+  if(client.connected()){
+    client.publish("kagamineryuki@gmail.com/aes-128/encrypt", (char *)encrypted_input_json.c_str());
+  } else {
+    Serial.println("WARNING : MQTT NOT CONNECTED !");
+  }
 
   // clear out the temporary variable for the next reading
   result_encrypt[0] = '\0';
-
-  Serial.println();
 
   for(int i = 0 ; i < 20 ; i++){
     client.loop();
@@ -167,7 +167,7 @@ void setup() {
   WiFi.disconnect();
   delay(1);
   Serial.println("Going to sleep for 30 seconds");
-  ESP.deepSleep(3e7, WAKE_RF_DISABLED);
+  ESP.deepSleep(15e6, WAKE_RF_DISABLED);
 }
 
 void loop() {

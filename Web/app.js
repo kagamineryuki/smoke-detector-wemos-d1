@@ -4,7 +4,6 @@ var app = express();
 var server = require('http').createServer(app);
 var serveIndex = require('serve-index');
 var mqtt = require('mqtt');
-var chacha = require('chacha-js');
 var io = require('socket.io').listen(server);
 
 var mqtt_cli = mqtt.connect('mqtt://maqiatto.com',{
@@ -20,7 +19,6 @@ app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 connections = []; //save all socket connections to this array
 
 server.listen(5000);
-socket_connect();
 mqtt_connect();
 mqtt_send();
 
