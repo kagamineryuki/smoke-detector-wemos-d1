@@ -20,7 +20,7 @@ ChaCha chacha;
 //wifi credential
 const char* ssid = "HN-03-1";
 const char* password = "<Ir0Be><5D3v1#vW><A!v#N7@f4#L>";
-IPAddress ip(192,168,30,52);
+IPAddress ip(192,168,30,3);
 IPAddress gw(192,168,30,1);
 IPAddress subnet(255,255,255,0);
 IPAddress dns(192,168,30,1);
@@ -75,6 +75,7 @@ void setup() {
 
 // interrupt trigger init
   pinMode(D5, OUTPUT);
+  pinMode(D5, LOW);
 
 // initialize dht library
   dht.setup(D4, DHTesp::DHT11);
@@ -182,7 +183,7 @@ void setup() {
   WiFi.disconnect();
   delay(1);
   Serial.println("Sleep for 30 secs");
-  ESP.deepSleep(3e7, WAKE_RF_DISABLED);
+  ESP.deepSleep(15e6, WAKE_RF_DISABLED);
 }
 
 void loop() {
