@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Home Automation for Wemos D1",
   "main": "app.js",
-  "dependencies": {},
+  "dependencies": {
+    "pg": "^8.0.3"
+  },
   "devDependencies": {
     "body-parser": "^1.19.0",
     "ejs": "^2.7.4",
@@ -15,7 +17,7 @@
     "mysql": "^2.18.1",
     "serve-index": "^1.9.1",
     "socket.io": "^2.3.0",
-    "chacha20": "^0.1.4"
+    "pg": "^8.0.3"
   },
   "scripts": {
     "test": "node app.js"

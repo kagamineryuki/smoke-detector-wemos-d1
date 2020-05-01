@@ -18,12 +18,12 @@ int msg_length = 0;
 ChaCha chacha;
 
 //wifi credential
-const char* ssid = "HN-03-1";
-const char* password = "<Ir0Be><5D3v1#vW><A!v#N7@f4#L>";
-IPAddress ip(192,168,30,3);
-IPAddress gw(192,168,30,1);
+const char* ssid = "Home";
+const char* password = "rumah123";
+IPAddress ip(192,168,0,20);
+IPAddress gw(192,168,0,1);
 IPAddress subnet(255,255,255,0);
-IPAddress dns(192,168,30,1);
+IPAddress dns(192,168,0,1);
 
 // CloudMQTT
 const char* mqttServer = "maqiatto.com";
@@ -38,7 +38,7 @@ long lastSendTH = 0;
 
 // ArduinoJSON
 StaticJsonDocument<1500> jsonBuffer;
-const size_t capacity = JSON_OBJECT_SIZE(1) + 1024;
+const size_t capacity = JSON_OBJECT_SIZE(1) + 2048;
 DynamicJsonDocument jsonSensors(capacity);
 DynamicJsonDocument jsonEncryptedSensors(capacity);
 DynamicJsonDocument jsonDecryptedSensors(capacity);
@@ -75,7 +75,7 @@ void setup() {
 
 // interrupt trigger init
   pinMode(D5, OUTPUT);
-  pinMode(D5, LOW);
+  digitalWrite(D5, LOW);
 
 // initialize dht library
   dht.setup(D4, DHTesp::DHT11);
@@ -110,7 +110,8 @@ void setup() {
   client.setCallback(callback);
 
   Serial.println("Connecting to MQTT Server...");
-  if (client.connect("client_1", mqttUser, mqttPassword)){ //trying to connect
+  if (client.connect("chacha20-1", mqttUser, mqttPassword)){ //trying to connect
+    client.subscribe("kagamineryuki@gmail.com/chacha20/encrypt_decrypt");
     Serial.println("Connected to MQTT Server");
   } else {
     Serial.print("Can't connect to MQTT Server : ");
@@ -123,7 +124,6 @@ void setup() {
   jsonEncryptedSensors.clear();
   encrypted_input_json.clear();
 
-  // make json for sensors
   Get_sensors_val();
   serializeJson(jsonSensors, input_string);
 
@@ -165,6 +165,8 @@ void setup() {
   jsonEncryptedSensors["counter"] = buffer_counter;
   jsonEncryptedSensors["time"] = time_stop - time_start;
   jsonEncryptedSensors["cycle"] = cycle_stop - cycle_start;
+  jsonEncryptedSensors["encryption_type"] = "chacha20";
+  jsonEncryptedSensors["machine_id"] = 1;
   serializeJson(jsonEncryptedSensors, encrypted_input_json);
 
   // publish it to wemos/
@@ -175,7 +177,7 @@ void setup() {
 
   Serial.println();
 
-  for(int i = 0 ; i < 20 ; i++){
+  for(int i = 0 ; i < 50 ; i++){
     client.loop();
     delay(100);
   }
