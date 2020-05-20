@@ -75,7 +75,7 @@ void setup() {
 
 // interrupt trigger init
   pinMode(D5, OUTPUT);
-  digitalWrite(D5, LOW);
+  digitalWrite(D5, HIGH);
 
 // initialize dht library
   dht.setup(D4, DHTesp::DHT11);
@@ -316,6 +316,8 @@ void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_s
   }
 
   digitalWrite(D5, HIGH);
+  delay(100);
+  digitalWrite(D5, LOW);
   
   time_start = micros();
   cycle_start = ESP.getCycleCount();
@@ -328,7 +330,10 @@ void Encrypt(ChaCha *chacha, char *msg, uint32_t& cycle_start, uint32_t& cycle_s
   cycle_stop = ESP.getCycleCount();
   time_stop = micros();
 
+  digitalWrite(D5, HIGH);
+  delay(100);
   digitalWrite(D5, LOW);
+
 
   for (int i = 0 ; i < msg_length ; i++){
       msg[i] = buffer[i];
@@ -344,6 +349,8 @@ void Decrypt(ChaCha *chacha, byte *ciphertext, byte *plaintext, int length, byte
   chacha->setCounter(counter, 8);
 
   digitalWrite(D5, HIGH);
+  delay(100);
+  digitalWrite(D5, LOW);
 
   time_start = micros();
   cycle_start = ESP.getCycleCount();
@@ -356,5 +363,8 @@ void Decrypt(ChaCha *chacha, byte *ciphertext, byte *plaintext, int length, byte
   cycle_stop = ESP.getCycleCount();
   time_stop = micros();
   
+  digitalWrite(D5, HIGH);
+  delay(100);
   digitalWrite(D5, LOW);
+
 }

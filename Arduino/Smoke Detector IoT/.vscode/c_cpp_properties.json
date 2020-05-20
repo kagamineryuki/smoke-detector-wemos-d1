@@ -6,8 +6,8 @@
         {
             "name": "Linux",
             "includePath": [
-                "/home/kaze/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/include",
-                "/home/kaze/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/src",
+                "/home/kaze/Documents/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/include",
+                "/home/kaze/Documents/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/src",
                 "/home/kaze/.platformio/lib/TroykaMQ_ID2537/src",
                 "/home/kaze/.platformio/lib/PubSubClient_ID89/src",
                 "/home/kaze/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WiFi/src",
@@ -53,8 +53,8 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "/home/kaze/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/include",
-                    "/home/kaze/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/src",
+                    "/home/kaze/Documents/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/include",
+                    "/home/kaze/Documents/smoke-detector-wemos-d1/Arduino/Smoke Detector IoT/src",
                     "/home/kaze/.platformio/lib/TroykaMQ_ID2537/src",
                     "/home/kaze/.platformio/lib/PubSubClient_ID89/src",
                     "/home/kaze/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WiFi/src",
@@ -99,7 +99,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=40301",
+                "PLATFORMIO=40303",
                 "ESP8266",
                 "ARDUINO_ARCH_ESP8266",
                 "ARDUINO_ESP8266_WEMOS_D1MINI",
