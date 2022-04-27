@@ -8,7 +8,7 @@
     "body-parser": "^1.19.0",
     "ejs": "^2.7.4",
     "express": "^4.17.1",
-    "grunt": "^1.1.0",
+    "grunt": "^1.5.2",
     "grunt-contrib-watch": "^1.1.0",
     "grunt-execute": "^0.2.2",
     "mqtt": "^2.18.8",
